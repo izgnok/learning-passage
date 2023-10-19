@@ -1,0 +1,3 @@
+[submodule "carbon-friendly"]
+	path = carbon-friendly
+	url = https://github.com/jhparkland/Carbon-friendly
