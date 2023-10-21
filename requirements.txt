@@ -1,0 +1,36 @@
+ansi2html==1.8.0
+Bottleneck @ file:///opt/conda/conda-bld/bottleneck_1657175564434/work
+certifi==2023.7.22
+charset-normalizer==3.3.0
+click==8.1.7
+dash==2.14.0
+dash-core-components==2.0.0
+dash-html-components==2.0.0
+dash-table==5.0.0
+Flask==2.2.5
+gunicorn==21.2.0
+idna==3.4
+importlib-metadata==6.8.0
+itsdangerous==2.1.2
+Jinja2==3.1.2
+MarkupSafe==2.1.3
+mkl-fft @ file:///croot/mkl_fft_1695058164594/work
+mkl-random @ file:///croot/mkl_random_1695059800811/work
+mkl-service==2.4.0
+nest-asyncio==1.5.8
+numexpr @ file:///croot/numexpr_1683221822650/work
+numpy @ file:///work/mkl/numpy_and_numpy_base_1682953417311/work
+packaging==23.2
+pandas @ file:///croot/pandas_1692289311655/work
+plotly==5.17.0
+python-dateutil @ file:///tmp/build/80754af9/python-dateutil_1626374649649/work
+pytz @ file:///croot/pytz_1695131579487/work
+requests==2.31.0
+retrying==1.3.4
+six @ file:///tmp/build/80754af9/six_1644875935023/work
+tenacity==8.2.3
+typing_extensions==4.8.0
+tzdata @ file:///croot/python-tzdata_1690578112552/work
+urllib3==2.0.7
+Werkzeug==2.2.3
+zipp==3.17.0
