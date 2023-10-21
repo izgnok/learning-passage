@@ -1,18 +1,13 @@
 from dash import Dash, html, dcc, dash_table, Input, Output
-import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as px
 
 external_stylesheets = ['assets/css/style.css']  # CSS 파일명
 fig = px.Figure(data=[px.Scatter(x=[1, 2, 3], y=[4, 1, 2])])
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, external_stylesheets] )
+app = Dash(__name__, external_stylesheets=external_stylesheets)
 app.title = 'Carbon friendly'
 app._favicon = 'assets/favicon/favicon.ico'
-
-df_dict = {100:df_100_measurement, 90:df_90_measurement}
-
-
 
 app.layout = html.Div([
 
