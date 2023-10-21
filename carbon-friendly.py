@@ -3,14 +3,12 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as px
 
-external_stylesheets = ['./assets/css/style.css']  # CSS 파일명
+external_stylesheets = ['assets/css/style.css']  # CSS 파일명
 fig = px.Figure(data=[px.Scatter(x=[1, 2, 3], y=[4, 1, 2])])
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, external_stylesheets] )
 app.title = 'Carbon friendly'
-app._favicon = './assets/css/favicon/favicon.ico'
-df_100_measurement = pd.read_csv("./data/100_measurement.csv")
-df_90_measurement = pd.read_csv("./data/90_measurement.csv")
+app._favicon = 'assets/favicon/favicon.ico'
 
 df_dict = {100:df_100_measurement, 90:df_90_measurement}
 
@@ -22,7 +20,7 @@ app.layout = html.Div([
     #left-section
     html.Div([
         #logo section
-        html.Div([html.Img(src='assets\img\icon.png', style={'padding':'0.2em'}), html.Strong("Carbon friendly")], id='logo', className='logo'),
+        html.Div([html.Img(src='assets/img/icon.png', style={'padding':'0.2em'}), html.Strong("Carbon friendly")], id='logo', className='logo'),
         html.P(),
 
         html.Div([
@@ -109,4 +107,4 @@ app.layout = html.Div([
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port='9090')
+    app.run(debug=True)
