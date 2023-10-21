@@ -1,95 +1,94 @@
-# Dash 관련
-from dash import Dash, html, dcc, dash_table, Input, Output
-import plotly.graph_objects as px
+from dash import Dash, dcc, html
+import dash_bootstrap_components as dbc
+import plotly.express as px
+import plotly.graph_objs as go
 
-# 파이어베이스 관련 모듈
-from module.Firebase.firebase import FirebaseManager
-from module.Firebase.carbon_track import CarbonTrack
-from module.Firebase.storage import Storage
+df = px.data.gapminder()
+continents = df.continent.unique()
+app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-# 기타 라이브러리
-import pandas as pd
+fig = go.Figure(data=[go.Scatter(x=[1, 2, 3], y=[4, 1, 2])])
+fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
 
-external_stylesheets = ['assets/css/style.css']  # CSS 파일명
-fig = px.Figure(data=[px.Scatter(x=[1, 2, 3], y=[4, 1, 2])])
+Logo = html.H1(
+    "Carbon-friendly",
+    className="bg-dark text-white p-2 mb-2 text-center"
+)
+loginForm = dbc.Form([
+    dbc.Row([
+        dbc.Col([
+            dbc.Row(
+                [
+                    dbc.Label("ID", width="auto"),
+                    dbc.Col(
+                        dbc.Input(type="id", placeholder="아이디를 입력"),
+                        className="me-3",
+                    ),
+                ],
+                className="g-2",
+            ),
+            dbc.Row(
+                [
+                    dbc.Label("P W", width="auto"),
+                    dbc.Col(
+                        dbc.Input(type="password", placeholder="비밀번호 입력"),
+                        className="me-3",
+                    ),
+                ],
+                className="g-2",
+            ),
+        ], width=9),
+        dbc.Col(dbc.Button("Submit", color="dark"), width="auto"),
 
-app = Dash(__name__, external_stylesheets=external_stylesheets)
-server = app.server 
-app.title = 'Carbon friendly'
-app._favicon = 'assets/favicon/favicon.ico'
+    ]),
+])
 
-app.layout = html.Div([
+controls = dbc.Card(
+    [Logo, loginForm],
+    body=True,
+)
+resources = dbc.Card([html.H2("Computing Info🖥️"), 
+                      html.Div("CPU"), 
+                      html.Br(), 
+                      html.Div("Memory"), 
+                      html.Br(), 
+                      html.Div("GPU")],
+                     body=True)
 
-    html.Div(className='blank'),
-    #left-section
-    html.Div([
-        #logo section
-        html.Div([html.H1("Carbon friendly")], id='logo', className='logo'),
-        html.P(),
-
-        # Computing 
-        html.Div([
-            html.H1("Computing Info🖥️"),
-            html.Strong(html.Label("CPU: ", className='Lcpu')),
-            html.Div("Intel(R) Xeon(R) pxld 6230R CPU @ 2.10GHz", id='cpu', className='cpu', style={'display': 'inline-flex'}),
-            html.Br(),
-
-            html.Strong(html.Label("GPU: ", className='LGpu')),
-            html.Div("Tesla V100 SMX 32GB", id='Gpu', className='Gpu', style={'display': 'inline-flex'}),
-            html.Br(),
-
-            html.Strong(html.Label("RAM: ", className='LRAM')),
-            html.Div("128GB", id='ram', className='ram', style={'display': 'inline-flex'}),
-            html.Br(),
-        ], className='computing')
-    ], className='left-section'), 
-
-    
-    html.Div(className='split'),
-
-    #right-section
-    html.Div([
-        
-        # 상단 그래프
-        html.Div([
-            html.Div(dcc.Graph(figure=fig),),
-            html.Div(dcc.Graph(figure=fig),),
-            html.Div(dcc.Graph(figure=fig),),
-        ], className='top-figure'),
-
-        # 지도
-        html.Div([
-            dcc.Graph(figure=fig)
-        ], className='geo'),
-
-        # 하단 그래프
-        html.Div([
-            html.Div([dcc.Graph(figure=fig),]),
-            html.Div([dcc.Graph(figure=fig)])
-        ], className='bottom-figure')
-
-    ], className='right-section'),
-
-    #footer
-    html.Div(
-            [
-                html.P("© 2023 Data Science Lab All Rights Reserved."),
-                html.P(
-                    [
-                        html.P("49315. 부산광역시 사하구 낙동대로 550번길 37(하단동) 동아대학교 공과대학1호관 4층 423호"),
-                        html.A("Lab Website", href="https://www.datasciencelabs.org/", target='_blank'),
-                        html.A("Contact Us", href="https://github.com/datascience-labs", target='_blank'),
-                        html.A("Maker github", href="https://github.com/jhparkland", target='_blank'),
-                    ]
+top_graph = dcc.Graph(figure=fig)
+geo = dcc.Graph(figure=fig)
+app.layout = dbc.Container(
+    [
+        dbc.Row([
+            dbc.Col([
+                controls,
+                dbc.Row(
+                    resources
                 )
-            ],
-            className="footer"
-        ),
+            ], width=3),
 
-], className='main')
+            dbc.Col([
+                dbc.Row([
+                    dbc.Col(dbc.Card([html.Div(top_graph)], body=True, ), width=4),
+                    dbc.Col(dbc.Card([html.Div(top_graph)], body=True, ), width=4),
+                    dbc.Col(dbc.Card([html.Div(top_graph)], body=True, ), width=4),
+                ]),
+                dbc.Row([
+                    dbc.Col(dbc.Card([html.Div(geo)], body=True))
+                ]),
+                dbc.Row([
+                    dbc.Col(dbc.Card([html.Div(top_graph)], body=True, ), width=4),
+                    dbc.Col(dbc.Card([html.Div(top_graph)], body=True, ), width=4),
+                    dbc.Col(dbc.Card([html.Div(top_graph)], body=True, ), width=4),
+                ]),
+            ], width=9),
+        ]),
 
+    ],
+    fluid=True,
+    className="dbc dbc-ag-grid",
+)
 
-
-if __name__ == '__main__':
-    app.run(host='127.0.0.1', debug=True)
-    app.run_server() # 배포시 활용 됨.
+if __name__ == "__main__":
+    app.run(debug=True)
+    app.run_server()
