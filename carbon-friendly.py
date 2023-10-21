@@ -1,6 +1,14 @@
+# Dash 관련
 from dash import Dash, html, dcc, dash_table, Input, Output
-import pandas as pd
 import plotly.graph_objects as px
+
+# 파이어베이스 관련 모듈
+from module.Firebase.firebase import FirebaseManager
+from module.Firebase.carbon_track import CarbonTrack
+from module.Firebase.storage import Storage
+
+# 기타 라이브러리
+import pandas as pd
 
 external_stylesheets = ['assets/css/style.css']  # CSS 파일명
 fig = px.Figure(data=[px.Scatter(x=[1, 2, 3], y=[4, 1, 2])])
@@ -16,27 +24,7 @@ app.layout = html.Div([
     #left-section
     html.Div([
         #logo section
-        html.Div([html.Img(src='assets/img/icon.png', style={'padding':'0.2em'}), html.Strong("Carbon friendly")], id='logo', className='logo'),
-        html.P(),
-
-        html.Div([
-            # ID, PW Input
-            html.Div([
-                html.Label("I D "),
-                dcc.Input("아이디를 입력하세요", type='text', id='id', className='id', style={'width':'100%'}),
-                html.Br(),
-
-                html.Label("PW "),
-                dcc.Input("비밀번호를 입력하세요", type='password', id='pw', className='pw', style={'width':'100%'}),
-                html.Br()
-            ]),
-
-            # Button
-            html.Div([
-                html.Button("로그인", id='login', style={'width':'auto', 'hight':'autu'})
-            ], className='login'),
-        ], style={'display':'flex'}),
-
+        html.Div([html.H1("Carbon friendly")], id='logo', className='logo'),
         html.P(),
 
         # Computing 
@@ -103,5 +91,5 @@ app.layout = html.Div([
 
 
 if __name__ == '__main__':
-    #app.run(host='127.0.0.1', debug=True)
-    app.run_server()
+    app.run(host='127.0.0.1', debug=True)
+    app.run_server() # 배포시 활용 됨.
