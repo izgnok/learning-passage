@@ -6,3 +6,4 @@ Flask==2.2.5
 gunicorn==21.2.0
 pandas
 plotly==5.17.0
+gunicorn
