@@ -1,1 +1,1 @@
-web: gunicorn carbon-friendly:server
+web: gunicorn app:server
