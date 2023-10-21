@@ -5,8 +5,8 @@ import plotly.graph_objects as px
 external_stylesheets = ['assets/css/style.css']  # CSS 파일명
 fig = px.Figure(data=[px.Scatter(x=[1, 2, 3], y=[4, 1, 2])])
 
-app = Dash('carbon-friendly', external_stylesheets=external_stylesheets)
-server = app.server
+app = Dash(__name__, external_stylesheets=external_stylesheets)
+server = app.server 
 app.title = 'Carbon friendly'
 app._favicon = 'assets/favicon/favicon.ico'
 
