@@ -1,1 +1,1 @@
-web: gunicorn --workers 1 carbon-friendly:server
+web: gunicorn carbon-friendly:server
