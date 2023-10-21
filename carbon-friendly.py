@@ -6,6 +6,7 @@ import plotly.graph_objs as go
 df = px.data.gapminder()
 continents = df.continent.unique()
 app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+server = app.server
 
 fig = go.Figure(data=[go.Scatter(x=[1, 2, 3], y=[4, 1, 2])])
 fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
