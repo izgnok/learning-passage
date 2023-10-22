@@ -3,7 +3,7 @@ import dash_bootstrap_components as dbc
 import plotly.express as px
 import plotly.graph_objs as go
 
-class AppLayout:
+class LayoutManager:
     """
     앱 레이아웃 스켈레톤 정의
     """
@@ -24,7 +24,7 @@ class AppLayout:
                         [
                             dbc.Label("ID", width="auto"),
                             dbc.Col(
-                                dbc.Input(type="id", placeholder="아이디를 입력"),
+                                dbc.Input(type="id", placeholder="아이디를 입력", id = 'id'),
                                 className="me-3",
                             ),
                         ],
@@ -34,14 +34,14 @@ class AppLayout:
                         [
                             dbc.Label("P W", width="auto"),
                             dbc.Col(
-                                dbc.Input(type="password", placeholder="비밀번호 입력"),
+                                dbc.Input(type="password", placeholder="비밀번호 입력", id = 'pw'),
                                 className="me-3",
                             ),
                         ],
                         className="g-2",
                     ),
                 ], width=9),
-                dbc.Col(dbc.Button("Submit", color="dark"), width="auto"),
+                dbc.Col(dbc.Button("Submit", color="dark", id = 'loginbtn'), width="auto"),
 
             ]),
         ])
@@ -53,16 +53,18 @@ class AppLayout:
 
         self.resources = dbc.Container(
                         dbc.Card([html.H2("Computing Info🖥️"), 
-                                html.Div("CPU"), 
+                                html.Div("CPU", id = 'cpu'), 
                                 html.Br(), 
-                                html.Div("Memory"), 
+                                html.Div("Memory", id = 'ram'), 
                                 html.Br(), 
-                                html.Div("GPU")],
+                                html.Div("GPU", id = 'gpu')],
                                 body=True)
                     )
-                    
-        self.top_graph = dcc.Graph(figure=fig)
-        self.geo = dcc.Graph(figure=fig)
+        
+        # 나중에 figure 인자 지워야 함. 추후 콜백으로 그래프를 리턴함.
+        self.top_graph = dcc.Graph(figure=fig, id = 'top_graph')
+        self.bottom_graph = dcc.Graph(figure=fig, id = 'bottom_graph')
+        self.geo = dcc.Graph(figure=fig, id = 'geo')
 
     def create_layout(self):
         """
@@ -90,9 +92,9 @@ class AppLayout:
                             dbc.Col(dbc.Card([html.Div(self.geo)], body=True))
                         ]),
                         dbc.Row([
-                            dbc.Col(dbc.Card([html.Div(self.top_graph)], body=True, ), width=4),
-                            dbc.Col(dbc.Card([html.Div(self.top_graph)], body=True, ), width=4),
-                            dbc.Col(dbc.Card([html.Div(self.top_graph)], body=True, ), width=4),
+                            dbc.Col(dbc.Card([html.Div(self.bottom_graph)], body=True, ), width=4),
+                            dbc.Col(dbc.Card([html.Div(self.bottom_graph)], body=True, ), width=4),
+                            dbc.Col(dbc.Card([html.Div(self.bottom_graph)], body=True, ), width=4),
                         ]),
                     ], width=9),
                 ]),
