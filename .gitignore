@@ -4,4 +4,3 @@ venv
 *.pyc
 .DS_Store
 .env
-firebase_SDK.json

@@ -1,4 +1,5 @@
 from dash import Dash, dcc, html
+from module.Firebase.firebase import FirebaseManager
 import dash_bootstrap_components as dbc
 import plotly.express as px
 import plotly.graph_objs as go
@@ -9,9 +10,10 @@ class LayoutManager:
     """
 
     def __init__(self, app):
-        self.app = app
-        fig = go.Figure(data=[go.Scatter(x=[1, 2, 3], y=[4, 1, 2])])
-        fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+        self.app = app # Dash 인스턴스
+
+        self.fig = go.Figure(data=[go.Scatter(x=[1, 2, 3], y=[4, 1, 2])])
+        self.fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
 
         self.Logo = html.H1(
             "Carbon-friendly",
@@ -41,8 +43,16 @@ class LayoutManager:
                         className="g-2",
                     ),
                 ], width=9),
-                dbc.Col(dbc.Button("Submit", color="dark", id = 'loginbtn'), width="auto"),
-
+                html.P(),
+                dbc.Col(dbc.Button("Sing In", color="dark", n_clicks= 0, id = 'loginbtn'), width="auto"),
+                dbc.Col(dbc.Button("Sing Out", color="dark", n_clicks= 0, id = 'logoutbtn'), width="auto"),
+                dbc.Col(dbc.Button("Sing Up", color="dark", n_clicks= 0, id = 'joinbtn'), width="auto"),
+                dbc.Row([
+                    html.Br(),
+                    html.H6(" ", id='sing_up_info'),
+                    html.H6(" ", id='login_info'),
+                        ], className="mt-2"),
+                
             ]),
         ])
 
@@ -62,9 +72,9 @@ class LayoutManager:
                     )
         
         # 나중에 figure 인자 지워야 함. 추후 콜백으로 그래프를 리턴함.
-        self.top_graph = dcc.Graph(figure=fig, id = 'top_graph')
-        self.bottom_graph = dcc.Graph(figure=fig, id = 'bottom_graph')
-        self.geo = dcc.Graph(figure=fig, id = 'geo')
+        self.top_graph = dcc.Graph(figure=self.fig, id = 'top_graph')
+        self.bottom_graph = dcc.Graph(figure=self.fig, id = 'bottom_graph')
+        self.geo = dcc.Graph(figure=self.fig, id = 'geo')
 
     def create_layout(self):
         """
@@ -108,5 +118,6 @@ class LayoutManager:
                                     html.A("Contact Us", href="https://github.com/datascience-labs", target='_blank'),
                                     html.A("Maker github", href="https://github.com/jhparkland", target='_blank'),])
                         ],className="footer"),
+                
             ],fluid=True, className="dbc dbc-ag-grid",)
 
