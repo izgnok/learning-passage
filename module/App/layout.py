@@ -1,5 +1,4 @@
 from dash import Dash, dcc, html
-from module.Firebase.firebase import FirebaseManager
 import dash_bootstrap_components as dbc
 import plotly.express as px
 import plotly.graph_objs as go
@@ -24,7 +23,7 @@ class LayoutManager:
                 dbc.Col([
                     dbc.Row(
                         [
-                            dbc.Label("ID", width="auto"),
+                            dbc.Label("ID", width="auto", id='idlabel'),
                             dbc.Col(
                                 dbc.Input(type="id", placeholder="아이디를 입력", id = 'id'),
                                 className="me-3",
@@ -34,7 +33,7 @@ class LayoutManager:
                     ),
                     dbc.Row(
                         [
-                            dbc.Label("P W", width="auto"),
+                            dbc.Label("P W", width="auto", id='pwlabel'),
                             dbc.Col(
                                 dbc.Input(type="password", placeholder="비밀번호 입력", id = 'pw'),
                                 className="me-3",
@@ -49,8 +48,12 @@ class LayoutManager:
                 dbc.Col(dbc.Button("Sing Up", color="dark", n_clicks= 0, id = 'joinbtn'), width="auto"),
                 dbc.Row([
                     html.Br(),
-                    html.H6(" ", id='sing_up_info'),
-                    html.H6(" ", id='login_info'),
+                     dbc.Modal(id="login_modal",is_open=False),
+                     dcc.Interval(
+                                id='interval-component',
+                                interval=30*60*1000,  # 30분 * 60초 * 1000밀리초
+                                n_intervals=0
+                            ),
                         ], className="mt-2"),
                 
             ]),
@@ -62,7 +65,7 @@ class LayoutManager:
         )
 
         self.resources = dbc.Container(
-                        dbc.Card([html.H2("Computing Info🖥️"), 
+                        dbc.Card([html.H2("Computing Info🖥️(여기 약간 실시간 프로세서,  gpu 사용량 조회 시키기)"), 
                                 html.Div("CPU", id = 'cpu'), 
                                 html.Br(), 
                                 html.Div("Memory", id = 'ram'), 

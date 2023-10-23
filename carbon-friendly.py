@@ -5,7 +5,7 @@ import dash_bootstrap_components as dbc # bootstrap components
 
 app = Dash(__name__, 
            external_stylesheets=[dbc.themes.BOOTSTRAP], 
-           external_scripts = ['\\module\\Firebase\\firebase_sdk.html',
+           external_scripts = ['/module/Firebase/firebase_sdk.html',
                                'https://www.gstatic.com/firebasejs/8.0.0/firebase-app.js',
                                'https://www.gstatic.com/firebasejs/8.0.0/firebase-auth.js',]) # bootstrap theme
 
@@ -22,6 +22,9 @@ callback = CallbackManager(app)
 
 callback.create_join_callback() # 회원가입 콜백
 callback.create_login_callback() # 로그인 콜백
+callback.refresh_token_callback() # 토큰 갱신 콜백
+callback.create_logout_callback() # 로그아웃 콜백
+
 if __name__ == "__main__":
     app.run(debug=True)
     #app.run_server()

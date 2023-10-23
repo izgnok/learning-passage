@@ -1,5 +1,4 @@
-import firebase_admin
-from firebase_admin import credentials, auth, db
+import pyrebase
 
 class FirebaseManager:
     """
@@ -8,11 +7,15 @@ class FirebaseManager:
 
     def __init__(self):
         # Firebase database init
-        self.cred = credentials.Certificate('C:\\Users\\DSLab\\learning-passage\\firebase_SDK.json')
-        self.firebase_app = firebase_admin.initialize_app(self.cred, {
-            'databaseURL' : 'https://carbon-friendly-default-rtdb.firebaseio.com/'
-        })
-        self.auth = auth
-        self.dir = db.reference()
-
-        
+        self.config = {
+                        'apiKey': "AIzaSyCIhOSHqDgjbe9LU2x45xByd8g4Y2P18HM",
+                        'authDomain': "carbon-friendly-402901.firebaseapp.com",
+                        'databaseURL': 'https://carbon-friendly-402901-default-rtdb.firebaseio.com/',
+                        'serverAccount' : '../../firebase_SDK.json',
+                        'projectId': "carbon-friendly-402901",
+                        'storageBucket': "carbon-friendly-402901.appspot.com",
+                        'messagingSenderId': "982587361472",
+                        'appId': "1:982587361472:web:3c7e267e476bad79674525"
+                    }
+        self.app = pyrebase.initialize_app(self.config) # firebase app에 대한 참조 가져오기
+        self.auth = self.app.auth() # auth 서비스에 대해 참조 가져오기
