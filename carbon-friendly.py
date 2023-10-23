@@ -27,4 +27,4 @@ callback.create_logout_callback() # 로그아웃 콜백
 
 if __name__ == "__main__":
     app.run(debug=True)
-    #app.run_server()
+    app.run_server()
