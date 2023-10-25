@@ -1,18 +1,24 @@
-from dash import Dash, dcc, html, Output, Input, State
+from dash import Dash, dcc, html, Output, Input, State, callback_context
 from module.Firebase.firebase import FirebaseManager
+from flask_socketio import SocketIO
 import dash_bootstrap_components as dbc
 import plotly.express as px
 import plotly.graph_objs as go
+import paramiko
+import threading
+import os
 
 class CallbackManager:
     """
     앱 콜백 스켈레톤 정의
     """
 
-    def __init__(self, app):
+    def __init__(self, app, server):
         self.app = app # Dash에 대한 객체
+        self.server = server # server에 대한 객체
         self.firebase = FirebaseManager() # Firebase에 대한 객체
-        self.user = None # 현재 로그인한 사용자
+        self.__user = None # 현재 로그인한 사용자
+
 
     def create_join_callback(self):
         """
@@ -29,11 +35,11 @@ class CallbackManager:
         def join_callback(n_clicks, id, pw):
             if n_clicks and id and pw:
                 try:
-                    self.user = self.firebase.auth.create_user_with_email_and_password(id, pw) # id, pw 기반의 사용자 생성
-                    user_info = self.firebase.auth.get_account_info(self.user['idToken']) # user 정보 가져오기
+                    self.__user = self.firebase.auth.create_user_with_email_and_password(id, pw) # id, pw 기반의 사용자 생성
+                    user_info = self.firebase.auth.get_account_info(self.__user['idToken']) # user 정보 가져오기
                     email_verified = user_info['users'][0]['emailVerified']  
                     if not email_verified: # 인증아닌 유저
-                        self.firebase.auth.send_email_verification(self.user['idToken']) # 이메일 인증 메일 전송
+                        self.firebase.auth.send_email_verification(self.__user['idToken']) # 이메일 인증 메일 전송
                     return True, [
                         dbc.ModalHeader("회원가입"),
                         dbc.ModalBody(f'{id}님 회원가입을 축하드립니다! 이메일 인증을 완료하십시오'),
@@ -70,8 +76,8 @@ class CallbackManager:
         def login_callback(n_clicks, id, pw):
             if n_clicks and id and pw:
                 try:
-                    self.user = self.firebase.auth.sign_in_with_email_and_password(id, pw) # id로 user 찾기
-                    user_info = self.firebase.auth.get_account_info(self.user['idToken']) # user 정보 가져오기
+                    self.__user = self.firebase.auth.sign_in_with_email_and_password(id, pw) # id로 user 찾기
+                    user_info = self.firebase.auth.get_account_info(self.__user['idToken']) # user 정보 가져오기
                     email_verified = user_info['users'][0]['emailVerified']
                     if email_verified:  # 인증 유저
                         return True, [
@@ -100,8 +106,8 @@ class CallbackManager:
             prevent_initial_call=True,
         )
         def update_every_30mins(n):
-            self.firebase.auth.refresh(self.firebase.auth.get_account_info(self.user['idToken']))
-            print(f'{self.user["email"]} refreshed')
+            self.firebase.auth.refresh(self.firebase.auth.get_account_info(self.__user['idToken']))
+            print(f'{self.__user["email"]} refreshed')
             return n+1
         
     def create_logout_callback(self):
@@ -121,7 +127,7 @@ class CallbackManager:
             if n_clicks:
                 try:
                     self.firebase.auth.current_user = None
-                    self.user = None
+                    self.__user = None
                     return True, [
                         dbc.ModalHeader("로그아웃"),
                         dbc.ModalBody(f'로그아웃 되었습니다'),

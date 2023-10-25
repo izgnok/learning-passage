@@ -23,7 +23,7 @@ class LayoutManager:
                 dbc.Col([
                     dbc.Row(
                         [
-                            dbc.Label("ID", width="auto", id='idlabel'),
+                            dbc.Label("Eamil", width="auto", id='idlabel'),
                             dbc.Col(
                                 dbc.Input(type="id", placeholder="아이디를 입력", id = 'id'),
                                 className="me-3",
@@ -75,9 +75,35 @@ class LayoutManager:
                     )
         
         # 나중에 figure 인자 지워야 함. 추후 콜백으로 그래프를 리턴함.
-        self.top_graph = dcc.Graph(figure=self.fig, id = 'top_graph')
-        self.bottom_graph = dcc.Graph(figure=self.fig, id = 'bottom_graph')
-        self.geo = dcc.Graph(figure=self.fig, id = 'geo')
+        self.top_graph = dcc.Graph(figure=self.fig)
+        self.bottom_graph = dcc.Graph(figure=self.fig)
+        self.geo = dcc.Graph(figure=self.fig)
+
+        # ssh terminal
+        self.terminal = [
+                html.Label('SSH Login'),
+                dbc.Input(id='ssh-host', type='text', placeholder='SSH Host'),
+                dbc.Input(id='ssh-username', type='text', placeholder='Username'),
+                dbc.Input(id='ssh-password', type='password', placeholder='Password'),
+                dbc.Input(id='ssh-port', type='number', placeholder='Port', value=22),
+                dbc.Button('Connect SSH', id='connect-ssh-button', n_clicks= 0, color='primary'),
+
+                dbc.Textarea(id='command-input', placeholder='Enter command here'),
+                dbc.Button('Execute', id='execute-btn', n_clicks=0),
+                dbc.Textarea(id='output', readonly=True),
+
+        ]
+
+        # footer
+        self.footer = html.Div([
+                        html.P("© 2023 Data Science Lab All Rights Reserved."),
+                        html.P([
+                            html.P("49315. 부산광역시 사하구 낙동대로 550번길 37(하단동) 동아대학교 공과대학1호관 4층 423호"),
+                            html.A("Lab Website", href="https://www.datasciencelabs.org/", target='_blank'),
+                            html.A("Contact Us", href="https://github.com/datascience-labs", target='_blank'),
+                            html.A("Maker github", href="https://github.com/jhparkland", target='_blank'),])
+                        ],className="footer")
+
 
     def create_layout(self):
         """
@@ -97,6 +123,10 @@ class LayoutManager:
 
                     dbc.Col([
                         dbc.Row([
+                            dbc.Col(dbc.Card([html.Div(self.terminal)], body=True, ), width=12),
+                        ]),
+                        
+                        dbc.Row([
                             dbc.Col(dbc.Card([html.Div(self.top_graph)], body=True, ), width=4),
                             dbc.Col(dbc.Card([html.Div(self.top_graph)], body=True, ), width=4),
                             dbc.Col(dbc.Card([html.Div(self.top_graph)], body=True, ), width=4),
@@ -109,18 +139,13 @@ class LayoutManager:
                             dbc.Col(dbc.Card([html.Div(self.bottom_graph)], body=True, ), width=4),
                             dbc.Col(dbc.Card([html.Div(self.bottom_graph)], body=True, ), width=4),
                         ]),
+
                     ], width=9),
+
                 ]),
-                #footer
-                html.Div(
-                        [
-                            html.P("© 2023 Data Science Lab All Rights Reserved."),
-                            html.P([
-                                    html.P("49315. 부산광역시 사하구 낙동대로 550번길 37(하단동) 동아대학교 공과대학1호관 4층 423호"),
-                                    html.A("Lab Website", href="https://www.datasciencelabs.org/", target='_blank'),
-                                    html.A("Contact Us", href="https://github.com/datascience-labs", target='_blank'),
-                                    html.A("Maker github", href="https://github.com/jhparkland", target='_blank'),])
-                        ],className="footer"),
+                
+                self.footer,
+                
                 
             ],fluid=True, className="dbc dbc-ag-grid",)
 
