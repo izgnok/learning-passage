@@ -11,8 +11,42 @@ class LayoutManager:
     def __init__(self, app):
         self.app = app # Dash 인스턴스
 
-        self.fig = go.Figure(data=[go.Scatter(x=[1, 2, 3], y=[4, 1, 2])])
-        self.fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+        self.ev_use_fig = go.Figure(data=[go.Scatter(x=[1, 2, 3], y=[4, 1, 2])]) # 전력 사용량 그래프
+        self.ev_use_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'서버 #: 전력 사용량')
+
+        self.carbon_emission_fig = go.Figure(data=[go.Indicator(mode = "number+gauge+delta",
+                                                                 gauge = {'shape': "bullet"},    
+                                                                 delta = {'reference': 300}, 
+                                                                 value = 220,
+                                                                 domain = {'x': [0.1, 1], 'y': [0.2, 0.9]},
+                                                                 title = {'text': "Avg order size"})]) # 탄소 배출량 그래프
+        
+        self.carbon_emission_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'서버 #: 탄소 배출량')
+
+        self.gpu_freq_fig = go.Figure(data=[go.Indicator(mode = "gauge+number",
+                                                        value = 450,
+                                                        title = {'text': "Speed"},
+                                                        domain = {'x': [0, 1], 'y': [0, 1]})]) # GPU 사용량 그래프
+        self.gpu_freq_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'서버 #: GPU 주파수')
+
+        self.carbon_density_fig = go.Figure(data=[go.Scatter(x=[1, 2, 3], y=[4, 1, 2])]) # 탄소 밀도 그래프
+        self.carbon_density_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'지역 #: 탄소 밀집도')
+
+        self.energy_output_fig = go.Figure(data=[go.Scatter(x=[1, 2, 3], y=[4, 1, 2])]) # 에너지 출력 그래프
+        self.energy_output_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'지역 #: 에너지 출처')
+
+        self.geo = go.Figure(data=go.Scattergeo(
+            lon = [126.9780],
+            lat = [37.5665],
+            text = ['Seoul'],
+            mode = 'markers',
+            marker_color = 'rgb(255, 0, 0)',
+            ))
+        self.geo.update_layout(
+            title = '물리적 서버 위치',
+            geo_scope='asia',
+            margin=dict(l=0, r=0, t=40, b=0)
+        )   
 
         self.Logo = html.H1(
             "Carbon-friendly",
@@ -74,11 +108,6 @@ class LayoutManager:
                                 body=True)
                     )
         
-        # 나중에 figure 인자 지워야 함. 추후 콜백으로 그래프를 리턴함.
-        self.top_graph = dcc.Graph(figure=self.fig)
-        self.bottom_graph = dcc.Graph(figure=self.fig)
-        self.geo = dcc.Graph(figure=self.fig)
-
         # ssh terminal
         self.terminal = [
                 html.Label('SSH Login'),
@@ -122,22 +151,21 @@ class LayoutManager:
                     ], width=3),
 
                     dbc.Col([
-                        dbc.Row([
-                            dbc.Col(dbc.Card([html.Div(self.terminal)], body=True, ), width=12),
-                        ]),
+                        # dbc.Row([
+                        #     dbc.Col(dbc.Card([html.Div(self.terminal)], body=True, ), width=12),
+                        # ]),
                         
                         dbc.Row([
-                            dbc.Col(dbc.Card([html.Div(self.top_graph)], body=True, ), width=4),
-                            dbc.Col(dbc.Card([html.Div(self.top_graph)], body=True, ), width=4),
-                            dbc.Col(dbc.Card([html.Div(self.top_graph)], body=True, ), width=4),
+                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.ev_use_fig))], body=True, ), width=4),
+                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.carbon_emission_fig))], body=True, ), width=4),
+                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.gpu_freq_fig))], body=True, ), width=4),
                         ]),
                         dbc.Row([
-                            dbc.Col(dbc.Card([html.Div(self.geo)], body=True))
+                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.geo))], body=True))
                         ]),
                         dbc.Row([
-                            dbc.Col(dbc.Card([html.Div(self.bottom_graph)], body=True, ), width=4),
-                            dbc.Col(dbc.Card([html.Div(self.bottom_graph)], body=True, ), width=4),
-                            dbc.Col(dbc.Card([html.Div(self.bottom_graph)], body=True, ), width=4),
+                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.carbon_density_fig))], body=True, ), width=6),
+                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.energy_output_fig))], body=True, ), width=6),
                         ]),
 
                     ], width=9),
