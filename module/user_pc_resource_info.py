@@ -1,11 +1,9 @@
 import platform
 import psutil
-import torch
+import pynvml
 import sys, os
 import csv
 
-USE_CUDA = torch.cuda.is_available()
-device = torch.device('cuda;0' if USE_CUDA else 'cpu')
 
 def cpuName() : # cpu 장치 이름을 불러오는 함수.
     cpu_name = platform.machine() 
@@ -18,14 +16,26 @@ def cpuCurrUse() : # cpu 현재 사용량을 가져오는 함수.
     return cpu_use # return type ; String 
 
 def gpuName() : # gpu 장치 이름을 가져오는 함수. 
-    gpu_name = torch.cuda.get_device_name(0)
-
-    return gpu_name # retrun type ; String 
+    try:
+        pynvml.nvmlInit()
+        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+        gpu_name = pynvml.nvmlDeviceGetName(handle).decode('utf-8')
+        pynvml.nvmlShutdown()
+        return gpu_name
+    except Exception as e:
+        return str(e)
 
 def gpuCurrUse() : # gpu 현재 사용량을 가져오는 함수.
-    gpu_use = str(round(torch.cuda.memory_allocated(0)/1024**3,1)) +'%'
+    try:
+        pynvml.nvmlInit()
+        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+        memory_info = pynvml.nvmlDeviceGetMemoryInfo(handle)
+        memory_used = memory_info.used / (1024 ** 2)  # 메가바이트 단위로 변환
+        pynvml.nvmlShutdown()
 
-    return gpu_use # retrun type ; String 
+        return memory_used
+    except Exception as e:
+        return str(e)
 
 def ramSize() :
     ram_size = str(round(psutil.virtual_memory().total / (1024.0 **3)))+"(GB)"
@@ -38,7 +48,6 @@ def ramCurrUse() : # RAM 현재 사용량을 가져오는 함수.
     curr_process_ram_use = curr_process.memory_info()[0] / 2**20
 
     return curr_process_ram_use # return type ; float
-
 
 pc_cpu_name = 'CPU 명 : ' + cpuName()
 pc_cpu_curr_use = 'CPU 현재 사용량 : ' + gpuCurrUse()
