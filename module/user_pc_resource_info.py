@@ -1,17 +1,16 @@
 import platform
 import psutil
 import pynvml
+import sys, os
+import csv
 import pandas as pd
-import os
 
-
-def cpuName() : # cpu 장치 이름을 불러오는 함수.
-    cpu_name = platform.machine() 
-    
-    return cpu_name # retrun type ; string
+def cpuName():
+    cpu_name = platform.processor()
+    return cpu_name
 
 def cpuCurrUse() : # cpu 현재 사용량을 가져오는 함수.
-    cpu_use = psutil.cpu_percent()
+    cpu_use = str(psutil.cpu_percent()) + "%"
 
     return cpu_use # return type ; String 
 
@@ -19,7 +18,7 @@ def gpuName() : # gpu 장치 이름을 가져오는 함수.
     try:
         pynvml.nvmlInit()
         handle = pynvml.nvmlDeviceGetHandleByIndex(0)
-        gpu_name = pynvml.nvmlDeviceGetName(handle).decode('utf-8')
+        gpu_name = pynvml.nvmlDeviceGetName(handle)
         pynvml.nvmlShutdown()
         return gpu_name
     except Exception as e:
@@ -49,20 +48,30 @@ def ramCurrUse() : # RAM 현재 사용량을 가져오는 함수.
 
     return curr_process_ram_use # return type ; float
 
-pc_cpu_name = f'CPU 명 : {cpuName()}'
-pc_cpu_curr_use = f'CPU 현재 사용량 : {cpuCurrUse()} %'
+pc_cpu_name = 'CPU 명 : ' + cpuName()
+pc_cpu_curr_use = f"'CPU 현재 사용량 : {cpuCurrUse()}"
+print(pc_cpu_name)
+print(pc_cpu_curr_use)
 
-pc_gpu_name = f'GPU 명 : {gpuName()}'
-pc_gpu_curr_use = f'GPU 현재 사용량 : {gpuCurrUse()} %'
+pc_gpu_name = 'GPU 명 : ' + gpuName()
+pc_gpu_curr_use = f"'GPU 현재 사용량 : {gpuCurrUse()}"
+print(pc_gpu_name)
+print(pc_gpu_curr_use)
 
-pc_ram_size = f'RAM 크기 : {ramSize()}'
-pc_ram_curr_use = f'RAM 현재 사용량 : {ramCurrUse()} %'
+pc_ram_size = 'RAM 크기 : ' + ramSize()
+pc_ram_curr_use = f"'RAM 현재 사용량 : {ramCurrUse()}"
+print(pc_ram_size)
+print(pc_ram_curr_use)
 
-pc_info = [pc_cpu_name, pc_cpu_curr_use, pc_gpu_name, pc_ram_size, pc_ram_curr_use] 
 
-df = pd.DataFrame([\
-    ['CPU', pc_cpu_name, pc_cpu_curr_use], \
-    ['GPU', pc_gpu_name, pc_gpu_curr_use], \
-    ['RAM', pc_ram_size, pc_ram_curr_use]])
+pc_info = ["CPU name", "CPU useing", "GPU name", "GPU useing", "RAM size", "RAM useing"] 
 
-df.to_csv('pc_resource_info')
+# 데이터와 열 이름 정의
+data = [[cpuName(), cpuCurrUse(), gpuName(), gpuCurrUse(), ramSize(), ramCurrUse()]]
+
+# DataFrame 생성 (인덱스 없음)
+df = pd.DataFrame(columns=pc_info, data=data)
+
+print(df)
+
+df.to_csv('pc_resource_info.csv')
