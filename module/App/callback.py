@@ -144,7 +144,16 @@ class CallbackManager:
     def resources_callback():
         pass
 
-    def graph_callback():
+    def carbon_emission_fig_callback():
+        pass
+
+    def gpu_freq_fig_callback():
+        pass
+
+    def carbon_density_fig_callback():
+        pass
+
+    def energy_output_fig_callback():
         pass
 
     def geo_callback():
