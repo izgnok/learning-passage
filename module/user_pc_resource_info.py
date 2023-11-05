@@ -1,8 +1,8 @@
 import platform
 import psutil
 import pynvml
-import sys, os
-import csv
+import pandas as pd
+import os
 
 
 def cpuName() : # cpu 장치 이름을 불러오는 함수.
@@ -11,7 +11,7 @@ def cpuName() : # cpu 장치 이름을 불러오는 함수.
     return cpu_name # retrun type ; string
 
 def cpuCurrUse() : # cpu 현재 사용량을 가져오는 함수.
-    cpu_use = str(psutil.cpu_percent() + '%')
+    cpu_use = psutil.cpu_percent()
 
     return cpu_use # return type ; String 
 
@@ -49,15 +49,20 @@ def ramCurrUse() : # RAM 현재 사용량을 가져오는 함수.
 
     return curr_process_ram_use # return type ; float
 
-pc_cpu_name = 'CPU 명 : ' + cpuName()
-pc_cpu_curr_use = 'CPU 현재 사용량 : ' + gpuCurrUse()
+pc_cpu_name = f'CPU 명 : {cpuName()}'
+pc_cpu_curr_use = f'CPU 현재 사용량 : {cpuCurrUse()} %'
 
-pc_gpu_name = 'GPU 명 : ' + gpuName()
-pc_gpu_curr_use = 'GPU 현재 사용량 : ' + gpuCurrUse()
+pc_gpu_name = f'GPU 명 : {gpuName()}'
+pc_gpu_curr_use = f'GPU 현재 사용량 : {gpuCurrUse()} %'
 
-pc_ram_size = 'RAM 크기 : ' + ramSize()
-pc_ram_curr_use = 'RAM 현재 사용량 : ' + ramCurrUse()
+pc_ram_size = f'RAM 크기 : {ramSize()}'
+pc_ram_curr_use = f'RAM 현재 사용량 : {ramCurrUse()} %'
 
 pc_info = [pc_cpu_name, pc_cpu_curr_use, pc_gpu_name, pc_ram_size, pc_ram_curr_use] 
 
-write = csv.write('/home/suya/learning-passage/learning-passage/pc_resource_data.csv').write(pc_info)
+df = pd.DataFrame([\
+    ['CPU', pc_cpu_name, pc_cpu_curr_use], \
+    ['GPU', pc_gpu_name, pc_gpu_curr_use], \
+    ['RAM', pc_ram_size, pc_ram_curr_use]])
+
+df.to_csv('pc_resource_info')
