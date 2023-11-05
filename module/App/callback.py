@@ -141,20 +141,39 @@ class CallbackManager:
                 
             return False, [], {}, {}, {}, {}, {}, {}
         
-    def resources_callback():
+    def resources_callback(self):
+        @self.app.callback(
+            [Output('cpu', 'children'),
+            Output('ram', 'children'),
+            Output('gpu', 'children'),],
+            [Input('loginbtn', 'n_clicks')])
+        def update_resources(n_clicks):
+            if n_clicks is None or n_clicks == 0:
+                # n_clicks가 None이거나 0이면, 콜백이 초기화 단계에 있거나 버튼이 클릭되지 않았다는 것을 의미합니다.
+                # 아무런 동작도 하지 않거나 초기값을 반환해야 합니다.
+                return "", "", ""
+            else:
+                data = self.firebase.db.child("com").get()
+                print(data.val())
+                # 데이터에서 CPU, RAM, GPU 값을 추출하고, 각 Output에 맞는 형식으로 반환해야 합니다.
+                # 예를 들어, 각각의 데이터가 문자열이라고 가정하겠습니다.
+                cpu_data = f"CPU: {data.val()['CPU name']}"  # 실제 데이터 구조에 맞게 경로를 조정해야 할 수 있습니다.
+                ram_data = f"RAM: {data.val()['RAM size']}"
+                gpu_data = f"GPU: {data.val()['GPU name']}"
+                return cpu_data, ram_data, gpu_data
+
+    def carbon_emission_fig_callback(self):
         pass
 
-    def carbon_emission_fig_callback():
+    def gpu_freq_fig_callback(self):
         pass
 
-    def gpu_freq_fig_callback():
+    def carbon_density_fig_callback(self):
         pass
 
-    def carbon_density_fig_callback():
+    def energy_output_fig_callback(self):
         pass
 
-    def energy_output_fig_callback():
+    def geo_callback(self):
         pass
-
-    def geo_callback():
-        pass
+    

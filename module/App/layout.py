@@ -11,6 +11,7 @@ class LayoutManager:
     def __init__(self, app):
         self.app = app # Dash 인스턴스
 
+        # 그래프
         self.ev_use_fig = go.Figure(data=[go.Scatter(x=[1, 2, 3], y=[4, 1, 2])]) # 전력 사용량 그래프
         self.ev_use_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'서버 #: 전력 사용량')
 
@@ -48,10 +49,14 @@ class LayoutManager:
             margin=dict(l=0, r=0, t=40, b=0)
         )   
 
+
+        # 로고
         self.Logo = html.H1(
             "Carbon-friendly",
             className="bg-dark text-white p-2 mb-2 text-center"
         )
+
+        # 로그인 폼
         self.loginForm = dbc.Form([
             dbc.Row([
                 dbc.Col([
@@ -97,7 +102,8 @@ class LayoutManager:
             [self.Logo, self.loginForm],
             body=True,
         )
-
+        
+        # 리소스 모니터
         self.resources = dbc.Container(
                         dbc.Card([html.H2("Computing Info🖥️(여기 약간 실시간 프로세서,  gpu 사용량 조회 시키기)"), 
                                 html.Div("CPU", id = 'cpu'), 
@@ -108,20 +114,20 @@ class LayoutManager:
                                 body=True)
                     )
         
-        # ssh terminal
-        self.terminal = [
-                html.Label('SSH Login'),
-                dbc.Input(id='ssh-host', type='text', placeholder='SSH Host'),
-                dbc.Input(id='ssh-username', type='text', placeholder='Username'),
-                dbc.Input(id='ssh-password', type='password', placeholder='Password'),
-                dbc.Input(id='ssh-port', type='number', placeholder='Port', value=22),
-                dbc.Button('Connect SSH', id='connect-ssh-button', n_clicks= 0, color='primary'),
+        # # ssh terminal
+        # self.terminal = [
+        #         html.Label('SSH Login'),
+        #         dbc.Input(id='ssh-host', type='text', placeholder='SSH Host'),
+        #         dbc.Input(id='ssh-username', type='text', placeholder='Username'),
+        #         dbc.Input(id='ssh-password', type='password', placeholder='Password'),
+        #         dbc.Input(id='ssh-port', type='number', placeholder='Port', value=22),
+        #         dbc.Button('Connect SSH', id='connect-ssh-button', n_clicks= 0, color='primary'),
 
-                dbc.Textarea(id='command-input', placeholder='Enter command here'),
-                dbc.Button('Execute', id='execute-btn', n_clicks=0),
-                dbc.Textarea(id='output', readonly=True),
+        #         dbc.Textarea(id='command-input', placeholder='Enter command here'),
+        #         dbc.Button('Execute', id='execute-btn', n_clicks=0),
+        #         dbc.Textarea(id='output', readonly=True),
 
-        ]
+        # ]
 
         # footer
         self.footer = html.Div([

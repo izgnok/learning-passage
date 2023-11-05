@@ -18,4 +18,5 @@ class FirebaseManager:
                         'appId': "1:982587361472:web:3c7e267e476bad79674525"
                     }
         self.app = pyrebase.initialize_app(self.config) # firebase app에 대한 참조 가져오기
+        self.db = self.app.database() # database 서비스에 대한 참조 가져오기
         self.auth = self.app.auth() # auth 서비스에 대해 참조 가져오기

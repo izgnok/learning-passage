@@ -22,7 +22,7 @@ callback.create_join_callback() # 회원가입 콜백
 callback.create_login_callback() # 로그인 콜백
 callback.refresh_token_callback() # 토큰 갱신 콜백
 callback.create_logout_callback() # 로그아웃 콜백
-
+callback.resources_callback() # 사용자 정보 갱신 콜백
 
 
 
