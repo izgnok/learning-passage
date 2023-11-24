@@ -1,5 +1,5 @@
 from dash import Dash, dcc, html, Output, Input, State, callback_context
-from module.Firebase.firebase import FirebaseManager
+from module.Firebase.firebase_manager import FirebaseManager
 from flask_socketio import SocketIO
 import dash_bootstrap_components as dbc
 import plotly.express as px
@@ -7,145 +7,149 @@ import plotly.graph_objs as go
 import paramiko
 import threading
 import os
+from dash.exceptions import PreventUpdate
+from .layout import LayoutManager
+from module.ElectricityMaps.electricity_maps import ElectricityMapsManager
 
 class CallbackManager:
     """
     앱 콜백 스켈레톤 정의
     """
-
     def __init__(self, app, server):
         self.app = app # Dash에 대한 객체
         self.server = server # server에 대한 객체
         self.firebase = FirebaseManager() # Firebase에 대한 객체
-        self.__user = None # 현재 로그인한 사용자
-
-
-    def create_join_callback(self):
+        self.layout_manager = LayoutManager(self.app) #레이아웃 매니저 객체 생성
+        self.pre_ev = 0 # ev 그래프 델타값 사용위해서
+        self.cmp_ev = 0
+        self.pre_emission = 0 # emission 그래프 델타값 사용위해서
+        self.cmp_emission = 0
+        self.pre_gfreq = 0 # gfreq 그래프 델타값 사용위해서
+        self.cmp_gfreq = 0
+        
+    # RDB에서 컴퓨터 데이터를 읽어와서 정보를 반환하는 콜백함수
+    def resources_callback(self):
         """
-        회원가입 콜백
-        """
-        @self.app.callback(
-            Output('login_modal', 'is_open', allow_duplicate=True), # output
-            Output('login_modal', 'children', allow_duplicate=True), # output       
-            Input('joinbtn', 'n_clicks'), # btn
-            State('id', 'value'), # id state
-            State('pw', 'value'), # pw state
-            prevent_initial_call=True # 최초 실행 방지
-        )
-        def join_callback(n_clicks, id, pw):
-            if n_clicks and id and pw:
-                try:
-                    self.__user = self.firebase.auth.create_user_with_email_and_password(id, pw) # id, pw 기반의 사용자 생성
-                    user_info = self.firebase.auth.get_account_info(self.__user['idToken']) # user 정보 가져오기
-                    email_verified = user_info['users'][0]['emailVerified']  
-                    if not email_verified: # 인증아닌 유저
-                        self.firebase.auth.send_email_verification(self.__user['idToken']) # 이메일 인증 메일 전송
-                    return True, [
-                        dbc.ModalHeader("회원가입"),
-                        dbc.ModalBody(f'{id}님 회원가입을 축하드립니다! 이메일 인증을 완료하십시오'),
-                    ]
-                except Exception as e:
-                    return True, [
-                        dbc.ModalHeader("회원가입"),
-                        dbc.ModalBody(f'회원가입 실패: {str(e)}'),
-
-                    ]
-            return False, []
-
-
-            
-    def create_login_callback(self):
-        """
-        로그인 콜백
+        컴퓨터 정보 콜백
         """
         @self.app.callback(
-            [Output('login_modal', 'is_open', allow_duplicate=True), # output
-            Output('login_modal', 'children', allow_duplicate=True), # output      
-            Output('loginbtn', 'style'), # output
-            Output('joinbtn', 'style'), # output
-            Output('id', 'style'), # output
-            Output('pw', 'style'), # output
-            Output('idlabel', 'style'), # output
-            Output('pwlabel', 'style'),], # output
-            Input('loginbtn', 'n_clicks'), # btn
-            State('id', 'value'), # id state
-            State('pw', 'value'), # pw state
-            prevent_initial_call=True,
-
-        )
-        def login_callback(n_clicks, id, pw):
-            if n_clicks and id and pw:
-                try:
-                    self.__user = self.firebase.auth.sign_in_with_email_and_password(id, pw) # id로 user 찾기
-                    user_info = self.firebase.auth.get_account_info(self.__user['idToken']) # user 정보 가져오기
-                    email_verified = user_info['users'][0]['emailVerified']
-                    if email_verified:  # 인증 유저
-                        return True, [
-                        dbc.ModalHeader("로그인"),
-                        dbc.ModalBody(f'{id}님 환영합니다😄'),
-                    ], {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
-                    else:
-                        return True, [
-                        dbc.ModalHeader("로그인"),
-                        dbc.ModalBody(f'{id}에 대한 이메일 인증을 완료하십시오'),
-
-                    ], {}, {}, {}, {}, {}, {}
-                except Exception as e:
-                    return True, [
-                        dbc.ModalHeader("로그인"),
-                        dbc.ModalBody(f'로그인 실패: {str(e)}'),
-
-                    ], {}, {}, {}, {}, {}, {}
-                
-            return False, [], {}, {}, {}, {}, {}, {}
-    
-    def refresh_token_callback(self):
-        @self.app.callback(
-            Output('interval-component', 'n_intervals'),
+            Output('cpu','children'),
+            Output('ram', 'children'),
+            Output('gpu', 'children'),
             Input('interval-component', 'n_intervals'),
-            prevent_initial_call=True,
         )
-        def update_every_30mins(n):
-            self.firebase.auth.refresh(self.firebase.auth.get_account_info(self.__user['idToken']))
-            print(f'{self.__user["email"]} refreshed')
-            return n+1
-        
-    def create_logout_callback(self):
+        def update_resources_callback(n_intervals):
+            # RDB에서 컴퓨터 정보 읽어오기
+            cpu_name = self.firebase.read_data("com/CPU name")
+            cpu_use = self.firebase.read_data("com/CPU useing")
+            gpu_name = self.firebase.read_data("com/GPU name")
+            gpu_use = self.firebase.read_data("com/GPU useing")
+            ram_size = self.firebase.read_data("com/RAM size")
+            ram_use = self.firebase.read_data("com/RAM useing")
+
+            # 읽어온 정보로 직접 각 부분을 업데이트
+            cpu_div = html.Div([
+                html.Div("CPU", style={'font-size': '20px', 'font-weight': 'bold', 'margin-top': '8px'}),
+                html.Div(f'CPU 아키텍처: {cpu_name}', style={'margin-top': '8px'}),
+                html.Div(f'CPU 사용량: {cpu_use}', style={'margin-top': '8px'})
+            ], id='cpu')
+            ram_div = html.Div([
+                html.Div("Memory", style={'font-size': '20px', 'font-weight': 'bold'}),
+                html.Div(f'RAM 용량: {ram_size}', style={'margin-top': '8px'}),
+                html.Div(f'RAM 사용량: {ram_use}', style={'margin-top': '8px'})
+            ], id='ram')
+            gpu_div = html.Div([
+                html.Div("GPU", style={'font-size': '20px', 'font-weight': 'bold'}),
+                html.Div(f'GPU 이름: {gpu_name}', style={'margin-top': '8px'}),
+                html.Div(f'GPU 사용량: {gpu_use}', style={'margin-top': '8px'})
+            ], id='gpu')
+            # 업데이트된 정보를 tuple로 반환
+            return cpu_div.children, ram_div.children, gpu_div.children
+
+
+    # RDB에서 데이터를 읽어와서 그래프를 반환하는 콜백함수
+    def graph_callback(self):
+        """
+        데이터, 그래프 콜백
+        """
         @self.app.callback(
-            [Output('login_modal', 'is_open', allow_duplicate=True), # output
-            Output('login_modal', 'children', allow_duplicate=True), # output     
-            Output('loginbtn', 'style', allow_duplicate=True), # output
-            Output('joinbtn', 'style', allow_duplicate=True), # output
-            Output('id', 'style', allow_duplicate=True), # output
-            Output('pw', 'style', allow_duplicate=True), # output
-            Output('idlabel', 'style', allow_duplicate=True), # output
-            Output('pwlabel', 'style', allow_duplicate=True),], # output
-            Input('logoutbtn', 'n_clicks'), # btn
-            prevent_initial_call=True,
+            Output('ev', 'figure'),
+            Output('emission', 'figure'),
+            Output('gfreq', 'figure'),
+            Input('interval-component', 'n_intervals'),  # 주기적으로 콜백을 트리거합니다
         )
-        def logout_callback(n_clicks):
-            if n_clicks:
-                try:
-                    self.firebase.auth.current_user = None
-                    self.__user = None
-                    return True, [
-                        dbc.ModalHeader("로그아웃"),
-                        dbc.ModalBody(f'로그아웃 되었습니다'),
-                    ], {}, {}, {}, {}, {}, {}
-                except Exception as e:
-                    return True, [
-                        dbc.ModalHeader("로그아웃"),
-                        dbc.ModalBody(f'로그아웃 실패: {str(e)}'),
+        def update_graph_callback(n_intervals):
+            print("콜백이 트리거되었습니다!")
 
-                    ], {}, {}, {}, {}, {}, {}
-                
-            return False, [], {}, {}, {}, {}, {}, {}
-        
-    def resources_callback():
-        pass
+            #if not self.__user:
+            #    raise PreventUpdate  # 사용자가 로그인하지 않았으면 업데이트하지 않음
 
-    def graph_callback():
-        pass
+            # Firebase에서 실시간 데이터 가져오기
+            ev = self.firebase.read_data("main/ev")
+            emission = self.firebase.read_data("main/emission")
+            gfreq = self.firebase.read_data("main/gfreq")
+            # 델타값 비교 알고리즘
+            if(self.cmp_ev != ev): self.pre_ev = self.cmp_ev
+            if(self.cmp_emission != emission): self.pre_emission = self.cmp_emission
+            if(self.cmp_gfreq != gfreq): self.pre_gfreq = self.cmp_gfreq       
+            self.cmp_ev = ev
+            self.cmp_emission = emission
+            self.cmp_gfreq = gfreq
+
+            # 가져온 데이터를 레이아웃 데이터에 복사
+            # 전력 사용량 그래프
+            self.layout_manager.ev_use_fig = go.Figure(data = [go.Indicator(
+                                                       mode="gauge+number+delta",
+                                                       value=ev,
+                                                       delta={'reference': self.pre_ev},
+                                                       title={'text': "EV Usage(W)"},
+                                                       domain={'x': [0,1], 'y': [0,1]},
+                                                       gauge={'axis': {'range': [0,1000]}}
+            )])
+            #self.layout_manager.ev_use_fig = go.Figure(data=[go.Scatter(x=[1, 2, 3, 4], y=ev)]) # 다른그래프모양
+            self.layout_manager.ev_use_fig.update_layout(margin=dict(l=40, r=40, t=40, b=0), title=f'서버 main: 전력 사용량')
+
+            #탄소 배출량 그래프
+            self.layout_manager.carbon_emission_fig = go.Figure(data=[go.Indicator(
+                mode="gauge+number+delta",
+                value=emission,
+                gauge={
+                    'shape':'bullet',
+                    'axis':{'visible': True, 'range':[0,1000]},
+                },
+                delta={'reference': self.pre_emission},
+                domain = {'x': [0.1, 1], 'y': [0.2, 0.9]},
+            )])
+            # 타이틀을 그래프 위로 올리기
+            self.layout_manager.carbon_emission_fig.update_layout(annotations=[dict(
+                text="Emission(g)",
+                showarrow=False,
+                xref="paper",
+                yref="paper",
+                x=0.5,
+                y=0.98,
+                align ="center",
+                font=dict(
+                        size=20, # 원하는 크기로 조절
+                    ),
+                )
+            ])
+            self.layout_manager.carbon_emission_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'서버 main: 탄소 배출량')
+
+            # GPU 주파수 그래프
+            self.layout_manager.gpu_freq_fig = go.Figure(data=[go.Indicator(
+                mode="gauge+number+delta",
+                value=gfreq,
+                delta={'reference': self.pre_gfreq},
+                title={'text': "Frequency(Hz)"},
+                domain={'x': [0, 1], 'y': [0, 1]},
+                gauge={'axis': {'range': [0, 2000]}}
+            )])
+            self.layout_manager.gpu_freq_fig.update_layout(margin=dict(l=40, r=40, t=40, b=0), title=f'서버 main: GPU 주파수')
+
+            # 그래프 반환
+            return self.layout_manager.ev_use_fig, self.layout_manager.carbon_emission_fig, self.layout_manager.gpu_freq_fig
+
 
     def geo_callback():
         pass

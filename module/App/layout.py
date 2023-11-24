@@ -7,27 +7,44 @@ class LayoutManager:
     """
     앱 레이아웃 스켈레톤 정의
     """
-
     def __init__(self, app):
         self.app = app # Dash 인스턴스
 
-        self.ev_use_fig = go.Figure(data=[go.Scatter(x=[1, 2, 3], y=[4, 1, 2])]) # 전력 사용량 그래프
-        self.ev_use_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'서버 #: 전력 사용량')
+        self.ev_use_fig = go.Figure(data = [go.Indicator(
+                                                       mode="gauge+number",
+                                                       title={'text': "EV Usage(W)"},
+                                                       domain={'x': [0,1], 'y': [0,1]},
+                                                       gauge={'axis': {'range': [0,1000]}}
+        )])
+        self.ev_use_fig.update_layout(margin=dict(l=40, r=40, t=40, b=0), title=f'서버 #: 전력 사용량')
 
-        self.carbon_emission_fig = go.Figure(data=[go.Indicator(mode = "number+gauge+delta",
-                                                                 gauge = {'shape': "bullet"},    
-                                                                 delta = {'reference': 300}, 
-                                                                 value = 220,
-                                                                 domain = {'x': [0.1, 1], 'y': [0.2, 0.9]},
-                                                                 title = {'text': "Avg order size"})]) # 탄소 배출량 그래프
-        
+        self.carbon_emission_fig = go.Figure(data=[go.Indicator( # 탄소배출량 그래프
+                mode ="gauge+number",
+                gauge={'shape':'bullet','axis':{'visible': False},},
+                domain={'x': [0.1,1], 'y': [0.2,0.9]},
+               
+        )])
+        # 타이틀을 그래프 위로 올리기
+        self.carbon_emission_fig.update_layout(annotations=[dict(
+                text="Emission(g)",
+                showarrow=False,
+                xref="paper",
+                yref="paper",
+                x=0.5,
+                y=0.98,
+                align ="center",
+                font=dict(
+                    size=20, # 원하는 크기로 조절
+                )
+            )
+        ])
         self.carbon_emission_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'서버 #: 탄소 배출량')
 
         self.gpu_freq_fig = go.Figure(data=[go.Indicator(mode = "gauge+number",
-                                                        value = 450,
-                                                        title = {'text': "Speed"},
-                                                        domain = {'x': [0, 1], 'y': [0, 1]})]) # GPU 사용량 그래프
-        self.gpu_freq_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'서버 #: GPU 주파수')
+                                                        title = {'text': "Frequency(Hz)"},
+                                                        domain = {'x': [0, 1], 'y': [0, 1]},
+                                                        gauge={'axis': {'range': [0, 2000]}})]) # GPU 사용량 그래프
+        self.gpu_freq_fig.update_layout(margin=dict(l=40, r=40, t=40, b=0), title=f'서버 #: GPU 주파수')
 
         self.carbon_density_fig = go.Figure(data=[go.Scatter(x=[1, 2, 3], y=[4, 1, 2])]) # 탄소 밀도 그래프
         self.carbon_density_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'지역 #: 탄소 밀집도')
@@ -50,79 +67,35 @@ class LayoutManager:
 
         self.Logo = html.H1(
             "Carbon-friendly",
-            className="bg-dark text-white p-2 mb-2 text-center"
+            className="bg-white text-black p-2 mb-2 text-center"
         )
-        self.loginForm = dbc.Form([
-            dbc.Row([
-                dbc.Col([
-                    dbc.Row(
-                        [
-                            dbc.Label("Eamil", width="auto", id='idlabel'),
-                            dbc.Col(
-                                dbc.Input(type="id", placeholder="아이디를 입력", id = 'id'),
-                                className="me-3",
-                            ),
-                        ],
-                        className="g-2",
-                    ),
-                    dbc.Row(
-                        [
-                            dbc.Label("P W", width="auto", id='pwlabel'),
-                            dbc.Col(
-                                dbc.Input(type="password", placeholder="비밀번호 입력", id = 'pw'),
-                                className="me-3",
-                            ),
-                        ],
-                        className="g-2",
-                    ),
-                ], width=9),
-                html.P(),
-                dbc.Col(dbc.Button("Sing In", color="dark", n_clicks= 0, id = 'loginbtn'), width="auto"),
-                dbc.Col(dbc.Button("Sing Out", color="dark", n_clicks= 0, id = 'logoutbtn'), width="auto"),
-                dbc.Col(dbc.Button("Sing Up", color="dark", n_clicks= 0, id = 'joinbtn'), width="auto"),
-                dbc.Row([
-                    html.Br(),
-                     dbc.Modal(id="login_modal",is_open=False),
-                     dcc.Interval(
-                                id='interval-component',
-                                interval=30*60*1000,  # 30분 * 60초 * 1000밀리초
-                                n_intervals=0
-                            ),
-                        ], className="mt-2"),
-                
-            ]),
-        ])
+        self.logo_path = "../../assets/img/logo.png" #로고 이미지 경로
+        self.LogoImgForm = dbc.Container([
+        dbc.Form([
+                dbc.Row(
+                    dbc.Col(html.Img(src=self.logo_path, height="300px"), width={"size": 10}),
+                    className="d-flex justify-content-center align-items-center" #가운데정렬
+                )]
+            ),
+        ],
+        fluid=True,
+        )
 
         self.controls = dbc.Card(
-            [self.Logo, self.loginForm],
+            [self.Logo, self.LogoImgForm],
             body=True,
         )
 
         self.resources = dbc.Container(
-                        dbc.Card([html.H2("Computing Info🖥️(여기 약간 실시간 프로세서,  gpu 사용량 조회 시키기)"), 
+                        dbc.Card([html.H2("Computing Info 🖥️"), 
                                 html.Div("CPU", id = 'cpu'), 
                                 html.Br(), 
-                                html.Div("Memory", id = 'ram'), 
+                                html.Div("GPU", id = 'gpu'), 
                                 html.Br(), 
-                                html.Div("GPU", id = 'gpu')],
+                                html.Div("Memory", id = 'ram')],
                                 body=True)
-                    )
+        )
         
-        # ssh terminal
-        self.terminal = [
-                html.Label('SSH Login'),
-                dbc.Input(id='ssh-host', type='text', placeholder='SSH Host'),
-                dbc.Input(id='ssh-username', type='text', placeholder='Username'),
-                dbc.Input(id='ssh-password', type='password', placeholder='Password'),
-                dbc.Input(id='ssh-port', type='number', placeholder='Port', value=22),
-                dbc.Button('Connect SSH', id='connect-ssh-button', n_clicks= 0, color='primary'),
-
-                dbc.Textarea(id='command-input', placeholder='Enter command here'),
-                dbc.Button('Execute', id='execute-btn', n_clicks=0),
-                dbc.Textarea(id='output', readonly=True),
-
-        ]
-
         # footer
         self.footer = html.Div([
                         html.P("© 2023 Data Science Lab All Rights Reserved."),
@@ -151,14 +124,10 @@ class LayoutManager:
                     ], width=3),
 
                     dbc.Col([
-                        # dbc.Row([
-                        #     dbc.Col(dbc.Card([html.Div(self.terminal)], body=True, ), width=12),
-                        # ]),
-                        
                         dbc.Row([
-                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.ev_use_fig))], body=True, ), width=4),
-                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.carbon_emission_fig))], body=True, ), width=4),
-                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.gpu_freq_fig))], body=True, ), width=4),
+                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.carbon_emission_fig, id='emission'))], body=True, ), width=4),
+                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.ev_use_fig, id='ev'))], body=True, ), width=4),
+                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.gpu_freq_fig, id='gfreq'))], body=True, ), width=4),
                         ]),
                         dbc.Row([
                             dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.geo))], body=True))
@@ -171,9 +140,12 @@ class LayoutManager:
                     ], width=9),
 
                 ]),
-                
                 self.footer,
-                
-                
+                 # dcc.Interval을 추가하여 10초에 한 번씩 자동으로 콜백을 트리거합니다.
+                dcc.Interval(
+                    id='interval-component',
+                    interval=10000,  # 1초마다 콜백을 트리거하도록 설정
+                    n_intervals=0
+                )
             ],fluid=True, className="dbc dbc-ag-grid",)
 
