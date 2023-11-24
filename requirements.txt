@@ -12,6 +12,7 @@ flask-socketio==5.3.6
 paramiko==3.3.1
 
 pynvml==11.5.0
+schedule==1.2.1
 platform
 psutil
 csv
