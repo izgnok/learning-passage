@@ -8,4 +8,3 @@ pandas
 plotly==5.17.0
 Pyrebase4==4.7.1
 gunicorn==21.2.0
-pynvml==11.5.0
