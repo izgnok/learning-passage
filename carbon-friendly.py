@@ -24,6 +24,7 @@ callback.graph_callback() # 그래프 콜백
 callback.resources_callback() # 컴퓨터자원 콜백
 callback.electricity_callback() # 탄소밀집도,에너지출처 콜백
 callback.geo_callback() # 지도 콜백
+callback.electricity_callback2() #플래그 체크 콜백
 
 if __name__ == "__main__":
     # app.run(debug=True)

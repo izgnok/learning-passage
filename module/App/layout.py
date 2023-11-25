@@ -165,18 +165,23 @@ class LayoutManager:
                         ]),
 
                     ], width=9),
-
+                    html.Div(id='zone', style={'display':'none'})
                 ]),
                 self.footer,
-                 # dcc.Interval을 추가하여 10초에 한 번씩 자동으로 콜백을 트리거합니다.
+                # dcc.Interval을 추가하여 주기적으로 자동으로 콜백을 트리거합니다.
                 dcc.Interval(
                             id='interval-component',
-                            interval=10000,  # 5초마다 콜백을 트리거하도록 설정
+                            interval=1000 * 60,  # 1분마다 콜백을 트리거하도록 설정
                             n_intervals=0
                 ),
                 dcc.Interval(
                                 id='elec_interval-component',
-                                interval=1000 * 60,  # 1분마다 콜백을 트리거하도록 설정
+                                interval=1000 * 60 * 60,  # 1시간마다 콜백을 트리거하도록 설정
                                 n_intervals=0
-                            )
+                ),
+                dcc.Interval(
+                                id='elec_interval-component2',
+                                interval=5000,  # 5초마다 콜백을 트리거하도록 설정
+                                n_intervals=0
+                )
             ],fluid=True, className="dbc dbc-ag-grid",)

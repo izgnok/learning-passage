@@ -27,6 +27,8 @@ class CallbackManager:
         self.pre_gfreq = 0 # gfreq 그래프 델타값 사용위해서
         self.cmp_gfreq = 0
         self.em = ElectricityMapsManager() # Electiricty 매니저 객체 생성
+        self.graph_count = 0 # 초기호출 확인 변수
+        self.elec_count = 0 # 초기호출 확인 변수
 
     # RDB에서 컴퓨터 데이터를 읽어와서 정보를 반환하는 콜백함수
     def resources_callback(self):
@@ -40,6 +42,7 @@ class CallbackManager:
             Input('interval-component', 'n_intervals'),
         )
         def update_resources_callback(n_intervals):
+            print("컴퓨터자원 콜백")
             # RDB에서 컴퓨터 정보 읽어오기
             cpu_name = self.firebase.read_data("com/CPU name")
             cpu_use = self.firebase.read_data("com/CPU useing")
@@ -63,7 +66,7 @@ class CallbackManager:
                             )
                         ],  'layout': {
                                 'autosize': True,
-                                'margin': {'l': 5, 'r': 5, 't': 0, 'b': 0},  # 여백 설정
+                                'margin': {'l': 40, 'r': 40, 't': 0, 'b': 0},  # 여백 설정
                         } 
                             }
                         ),
@@ -82,7 +85,7 @@ class CallbackManager:
                             )
                         ],  'layout': {
                                 'autosize': True,
-                                'margin': {'l': 5, 'r': 5, 't': 0, 'b': 0}  # 여백 설정
+                                'margin': {'l': 40, 'r': 40, 't': 0, 'b': 0}  # 여백 설정
                         }    
                             }
                         ),
@@ -102,7 +105,7 @@ class CallbackManager:
                             )
                         ],  'layout': {
                                 'autosize': True,
-                                'margin': {'l': 5, 'r': 5, 't': 0, 'b': 0}  # 여백 설정
+                                'margin': {'l': 40, 'r': 40, 't': 0, 'b': 0}  # 여백 설정
                         }   
                             }
                         ),
@@ -117,13 +120,21 @@ class CallbackManager:
         데이터, 그래프 콜백
         """
         @self.app.callback(
-            Output('ev', 'figure'),
+            [Output('ev', 'figure'),
             Output('emission', 'figure'),
-            Output('gfreq', 'figure'),
-            Input('interval-component', 'n_intervals'),  # 주기적으로 콜백을 트리거합니다
+            Output('gfreq', 'figure')],
+            [Input('interval-component', 'n_intervals'),  # 주기적으로 콜백을 트리거합니다
+            Input('zone', 'children')],
             allow_duplicate=True
         )
-        def update_graph_callback(n_intervals):
+        def update_graph_callback(n_intervals, children):
+            ctx = callback_context
+            print(self.graph_count)
+            if ctx.triggered_id == 'zone' and self.graph_count != 0:
+                if children is None:
+                    return self.layout_manager.ev_use_fig, self.layout_manager.carbon_emission_fig, self.layout_manager.gpu_freq_fig   
+            
+            self.graph_count = 1 #초기호출 완료
             print('그래프 콜백')
             #현재 서버나라 읽어오기
             zone = self.firebase.read_data("main/zone")
@@ -221,18 +232,45 @@ class CallbackManager:
     #일렉트리시티API 콜백
     def electricity_callback(self):
         @self.app.callback(
-            Output('carbon_density', 'figure'),
-            Output('energy_output', 'figure'),
-            Input('elec_interval-component', 'n_intervals'),  # 주기적으로 콜백을 트리거합니다
+            [Output('carbon_density', 'figure'),
+            Output('energy_output', 'figure')],
+            [Input('elec_interval-component', 'n_intervals'),  # 주기적으로 콜백을 트리거합니다
+            Input('zone', 'children')],
+            allow_duplicate=True
         )
-        def update_electricity_callback(n_intervals):
+        def update_electricity_callback(n_intervals,children):
+            ctx = callback_context
+            if ctx.triggered_id == 'zone' and self.elec_count!=0:
+                if children is None:
+                    return self.layout_manager.carbon_density_fig, self.layout_manager.energy_output_fig 
+            
+            self.elec_count = 1 #초기호출완료
             print('elec 콜백')
             # 데이터 랜덤 삽입
-            random_country = random.choice(["KR", "JP-TK", "DE", "FR"])
-            self.firebase.write_data("main/zone",random_country)
+            # random_country = random.choice(["KR", "JP-TK", "DE", "FR"])
+            # self.firebase.write_data("main/zone",random_country)
+
             # 데이터 읽어오기
             zone = self.firebase.read_data("main/zone")
             carbon_data = self.em.carbon_intensity("carbon-intensity",zone = zone, format='latest')
+            # 특정국가 평균 탄소 밀집도 < 현재 탄소 밀집도 조건 확인 Flag 전송
+            if(zone == 'KR'):
+                if(carbon_data.get('carbonIntensity') > 435):
+                    self.firebase.write_data("optim/request", True)
+                else: self.firebase.write_data("optim/request", False)
+            if(zone == 'DE'):
+                if(carbon_data.get('carbonIntensity') > 420):
+                    self.firebase.write_data("optim/request", True)
+                else: self.firebase.write_data("optim/request", False)
+            if(zone == 'JP-TK'):
+                if(carbon_data.get('carbonIntensity') > 480):
+                    self.firebase.write_data("optim/request", True)
+                else: self.firebase.write_data("optim/request", False)
+            if(zone == 'FR'):
+                if(carbon_data.get('carbonIntensity') > 50):
+                    self.firebase.write_data("optim/request", True)
+                else: self.firebase.write_data("optim/request", False)
+
             power_data_all = self.em.carbon_intensity("power-breakdown",zone = zone, format='latest')
             power_data = power_data_all.get("powerProductionBreakdown")
             if(zone=='KR'): country ="대한민국"
@@ -265,6 +303,7 @@ class CallbackManager:
                 pre_intensity = carbon_data.get('carbonIntensity')
                 self.firebase.write_data(f"{zone}/preintensity", pre_intensity)
                 self.firebase.write_data(f"{zone}/cmpintensity", carbon_data.get('carbonIntensity'))
+            
 
             #탄소밀집도 그래프
             self.layout_manager.carbon_density_fig = go.Figure(data=[go.Indicator(mode= "gauge+number+delta",
@@ -286,12 +325,25 @@ class CallbackManager:
 
             return self.layout_manager.carbon_density_fig, self.layout_manager.energy_output_fig
 
+    def electricity_callback2(self):
+        @self.app.callback(
+            Output('zone', 'children'),
+            Input('elec_interval-component2', 'n_intervals')
+        )
+        def update_electricity_callback2(n_intervals):
+            print('플래그체크 콜백')
+            zone = None
+            if self.firebase.read_data('optim/changed'): 
+                zone = self.firebase.read_data("main/zone")
+                self.firebase.write_data('optim/changed', False)
+                print(f'{zone}으로 바뀜')
+            return zone
+
     def geo_callback(self):
         @self.app.callback(
             Output('url', 'children'),
             Input('map', 'clickData'),  # 주기적으로 콜백을 트리거합니다
         )
-        
         def update_url(clickData):
             pass
             

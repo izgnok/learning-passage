@@ -25,7 +25,7 @@ class ElectricityMapsManager:
         '''
 
         # API endpoint URL
-        url = f"https://api-access.electricitymaps.com/2w97h07rvxvuaa1g/{type}/{format}"
+        url = f"https://api-access.electricitymaps.com/free-tier/{type}/{format}"
 
         # request parameter
         params = {
@@ -34,7 +34,7 @@ class ElectricityMapsManager:
 
         # Add API key to header
         headers = {
-            'auth-token': '6wUzIaKXxiFgD97RtKanMIW7qEPbd1YI'
+            'auth-token': 'asEaAcVw2JTpyu8h8uj44sR5ZoopaQ8w'
         }
 
         # GET request
