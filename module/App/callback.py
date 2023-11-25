@@ -4,176 +4,294 @@ from flask_socketio import SocketIO
 import dash_bootstrap_components as dbc
 import plotly.express as px
 import plotly.graph_objs as go
-import paramiko
-import threading
 import os
+import random
+from dash.exceptions import PreventUpdate
+from .layout import LayoutManager
+from module.ElectricityMaps.electricity_maps import ElectricityMapsManager
+from datetime import datetime, timedelta
 
 class CallbackManager:
     """
     앱 콜백 스켈레톤 정의
     """
-
     def __init__(self, app, server):
         self.app = app # Dash에 대한 객체
         self.server = server # server에 대한 객체
         self.firebase = FirebaseManager() # Firebase에 대한 객체
-        self.__user = None # 현재 로그인한 사용자
+        self.layout_manager = LayoutManager(self.app) #레이아웃 매니저 객체 생성
+        self.pre_ev = 0 # ev 그래프 델타값 사용위해서
+        self.cmp_ev = 0
+        self.pre_emission = 0 # emission 그래프 델타값 사용위해서
+        self.cmp_emission = 0
+        self.pre_gfreq = 0 # gfreq 그래프 델타값 사용위해서
+        self.cmp_gfreq = 0
+        self.em = ElectricityMapsManager() # Electiricty 매니저 객체 생성
 
-
-    def create_join_callback(self):
-        """
-        회원가입 콜백
-        """
-        @self.app.callback(
-            Output('login_modal', 'is_open', allow_duplicate=True), # output
-            Output('login_modal', 'children', allow_duplicate=True), # output       
-            Input('joinbtn', 'n_clicks'), # btn
-            State('id', 'value'), # id state
-            State('pw', 'value'), # pw state
-            prevent_initial_call=True # 최초 실행 방지
-        )
-        def join_callback(n_clicks, id, pw):
-            if n_clicks and id and pw:
-                try:
-                    self.__user = self.firebase.auth.create_user_with_email_and_password(id, pw) # id, pw 기반의 사용자 생성
-                    user_info = self.firebase.auth.get_account_info(self.__user['idToken']) # user 정보 가져오기
-                    email_verified = user_info['users'][0]['emailVerified']  
-                    if not email_verified: # 인증아닌 유저
-                        self.firebase.auth.send_email_verification(self.__user['idToken']) # 이메일 인증 메일 전송
-                    return True, [
-                        dbc.ModalHeader("회원가입"),
-                        dbc.ModalBody(f'{id}님 회원가입을 축하드립니다! 이메일 인증을 완료하십시오'),
-                    ]
-                except Exception as e:
-                    return True, [
-                        dbc.ModalHeader("회원가입"),
-                        dbc.ModalBody(f'회원가입 실패: {str(e)}'),
-
-                    ]
-            return False, []
-
-
-            
-    def create_login_callback(self):
-        """
-        로그인 콜백
-        """
-        @self.app.callback(
-            [Output('login_modal', 'is_open', allow_duplicate=True), # output
-            Output('login_modal', 'children', allow_duplicate=True), # output      
-            Output('loginbtn', 'style'), # output
-            Output('joinbtn', 'style'), # output
-            Output('id', 'style'), # output
-            Output('pw', 'style'), # output
-            Output('idlabel', 'style'), # output
-            Output('pwlabel', 'style'),], # output
-            Input('loginbtn', 'n_clicks'), # btn
-            State('id', 'value'), # id state
-            State('pw', 'value'), # pw state
-            prevent_initial_call=True,
-
-        )
-        def login_callback(n_clicks, id, pw):
-            if n_clicks and id and pw:
-                try:
-                    self.__user = self.firebase.auth.sign_in_with_email_and_password(id, pw) # id로 user 찾기
-                    user_info = self.firebase.auth.get_account_info(self.__user['idToken']) # user 정보 가져오기
-                    email_verified = user_info['users'][0]['emailVerified']
-                    if email_verified:  # 인증 유저
-                        return True, [
-                        dbc.ModalHeader("로그인"),
-                        dbc.ModalBody(f'{id}님 환영합니다😄'),
-                    ], {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
-                    else:
-                        return True, [
-                        dbc.ModalHeader("로그인"),
-                        dbc.ModalBody(f'{id}에 대한 이메일 인증을 완료하십시오'),
-
-                    ], {}, {}, {}, {}, {}, {}
-                except Exception as e:
-                    return True, [
-                        dbc.ModalHeader("로그인"),
-                        dbc.ModalBody(f'로그인 실패: {str(e)}'),
-
-                    ], {}, {}, {}, {}, {}, {}
-                
-            return False, [], {}, {}, {}, {}, {}, {}
-    
-    def refresh_token_callback(self):
-        @self.app.callback(
-            Output('interval-component', 'n_intervals'),
-            Input('interval-component', 'n_intervals'),
-            prevent_initial_call=True,
-        )
-        def update_every_30mins(n):
-            self.firebase.auth.refresh(self.firebase.auth.get_account_info(self.__user['idToken']))
-            print(f'{self.__user["email"]} refreshed')
-            return n+1
-        
-    def create_logout_callback(self):
-        @self.app.callback(
-            [Output('login_modal', 'is_open', allow_duplicate=True), # output
-            Output('login_modal', 'children', allow_duplicate=True), # output     
-            Output('loginbtn', 'style', allow_duplicate=True), # output
-            Output('joinbtn', 'style', allow_duplicate=True), # output
-            Output('id', 'style', allow_duplicate=True), # output
-            Output('pw', 'style', allow_duplicate=True), # output
-            Output('idlabel', 'style', allow_duplicate=True), # output
-            Output('pwlabel', 'style', allow_duplicate=True),], # output
-            Input('logoutbtn', 'n_clicks'), # btn
-            prevent_initial_call=True,
-        )
-        def logout_callback(n_clicks):
-            if n_clicks:
-                try:
-                    self.firebase.auth.current_user = None
-                    self.__user = None
-                    return True, [
-                        dbc.ModalHeader("로그아웃"),
-                        dbc.ModalBody(f'로그아웃 되었습니다'),
-                    ], {}, {}, {}, {}, {}, {}
-                except Exception as e:
-                    return True, [
-                        dbc.ModalHeader("로그아웃"),
-                        dbc.ModalBody(f'로그아웃 실패: {str(e)}'),
-
-                    ], {}, {}, {}, {}, {}, {}
-                
-            return False, [], {}, {}, {}, {}, {}, {}
-        
+    # RDB에서 컴퓨터 데이터를 읽어와서 정보를 반환하는 콜백함수
     def resources_callback(self):
+        """
+        컴퓨터 정보 콜백
+        """
         @self.app.callback(
-            [Output('cpu', 'children'),
+            [Output('cpu','children'),
             Output('ram', 'children'),
-            Output('gpu', 'children'),],
-            [Input('loginbtn', 'n_clicks')])
-        def update_resources(n_clicks):
-            if n_clicks is None or n_clicks == 0:
-                # n_clicks가 None이거나 0이면, 콜백이 초기화 단계에 있거나 버튼이 클릭되지 않았다는 것을 의미합니다.
-                # 아무런 동작도 하지 않거나 초기값을 반환해야 합니다.
-                return "", "", ""
-            else:
-                data = self.firebase.db.child("com").get()
-                print(data.val())
-                # 데이터에서 CPU, RAM, GPU 값을 추출하고, 각 Output에 맞는 형식으로 반환해야 합니다.
-                # 예를 들어, 각각의 데이터가 문자열이라고 가정하겠습니다.
-                cpu_data = f"CPU: {data.val()['CPU name']}"  # 실제 데이터 구조에 맞게 경로를 조정해야 할 수 있습니다.
-                ram_data = f"RAM: {data.val()['RAM size']}"
-                gpu_data = f"GPU: {data.val()['GPU name']}"
-                return cpu_data, ram_data, gpu_data
+            Output('gpu', 'children')],
+            Input('interval-component', 'n_intervals'),
+        )
+        def update_resources_callback(n_intervals):
+            # RDB에서 컴퓨터 정보 읽어오기
+            cpu_name = self.firebase.read_data("com/CPU name")
+            cpu_use = self.firebase.read_data("com/CPU useing")
+            gpu_name = self.firebase.read_data("com/GPU name")
+            gpu_use = self.firebase.read_data("com/GPU useing")
+            ram_size = self.firebase.read_data("com/RAM size")
+            ram_use = self.firebase.read_data("com/RAM useing")
 
-    def carbon_emission_fig_callback(self):
-        pass
+            # 읽어온 정보로 직접 각 부분을 업데이트
+            cpu_div = html.Div([
+                dcc.Graph(
+                            id='cpu_architecture',
+                            figure={
+                                'data': [
+                                    go.Indicator(
+                                        mode='gauge+number',  
+                                        title=f"CPU ARCHITECTURE: {cpu_name}",  # Indicator 제목 설정
+                                        value=float(cpu_use[:-1]),
+                                        gauge = {'axis': {'range': [0, 100]}}
 
-    def gpu_freq_fig_callback(self):
-        pass
+                            )
+                        ],  'layout': {
+                                'autosize': True,
+                                'margin': {'l': 5, 'r': 5, 't': 0, 'b': 0},  # 여백 설정
+                        } 
+                            }
+                        ),
+            ], id='cpu')
 
-    def carbon_density_fig_callback(self):
-        pass
+            ram_div = html.Div([                
+                dcc.Graph(
+                            id='ram_size',
+                            figure={
+                                'data': [
+                                    go.Indicator(
+                                        mode='gauge+number',  
+                                        title=f"RAM SIZE: {ram_size}",  # Indicator 제목 설정
+                                        value=ram_use,
+                                        gauge = {'axis': {'range': [0, 100]}}
+                            )
+                        ],  'layout': {
+                                'autosize': True,
+                                'margin': {'l': 5, 'r': 5, 't': 0, 'b': 0}  # 여백 설정
+                        }    
+                            }
+                        ),
+            ], id='ram')
+            gpu_div = html.Div([
+                # 그래프
+                dcc.Graph(
+                            id='gpu_name',
+                            figure={
+                                'data': [
+                                    go.Indicator(
+                                        mode='gauge+number',  
+                                        title={'text': f"GPU NAME: {gpu_name}", 'font':{'size':16}},   # Indicator 제목 설정
+                                        value=float(gpu_use),
+                                        gauge = {'axis': {'range': [0, 100]}}
 
-    def energy_output_fig_callback(self):
-        pass
+                            )
+                        ],  'layout': {
+                                'autosize': True,
+                                'margin': {'l': 5, 'r': 5, 't': 0, 'b': 0}  # 여백 설정
+                        }   
+                            }
+                        ),
+            ], id='gpu')
+            # 업데이트된 정보를 tuple로 반환
+            return cpu_div.children, ram_div.children, gpu_div.children
+
+
+    # RDB에서 데이터를 읽어와서 그래프를 반환하는 콜백함수
+    def graph_callback(self):
+        """
+        데이터, 그래프 콜백
+        """
+        @self.app.callback(
+            Output('ev', 'figure'),
+            Output('emission', 'figure'),
+            Output('gfreq', 'figure'),
+            Input('interval-component', 'n_intervals'),  # 주기적으로 콜백을 트리거합니다
+            allow_duplicate=True
+        )
+        def update_graph_callback(n_intervals):
+            print('그래프 콜백')
+            #현재 서버나라 읽어오기
+            zone = self.firebase.read_data("main/zone")
+            #랜덤데이터 RDB에 넣기        
+            random_emission = random.randint(50,330)
+            random_ev = random.randint(300,450)
+            random_gfreq = random.randint(750,2000)
+            self.firebase.write_data(f"{zone}/emission",random_emission)
+            self.firebase.write_data(f"{zone}/ev",random_ev)
+            self.firebase.write_data(f"{zone}/gfreq",random_gfreq)
+
+            # Firebase에서 실시간 데이터 가져오기
+            ev = self.firebase.read_data(f"{zone}/ev")
+            cmp_ev = self.firebase.read_data(f"{zone}/cmpev")
+            pre_ev = self.firebase.read_data(f"{zone}/preev")
+            emission = self.firebase.read_data(f"{zone}/emission")
+            cmp_emission = self.firebase.read_data(f"{zone}/cmpemission")
+            pre_emission = self.firebase.read_data(f"{zone}/preemission")
+            gfreq = self.firebase.read_data(f"{zone}/gfreq")
+            cmp_gfreq = self.firebase.read_data(f"{zone}/cmpgfreq")
+            pre_gfreq = self.firebase.read_data(f"{zone}/pregfreq")
+            if(zone=='KR'): country ="대한민국"
+            if(zone=='JP-TK'): country ="일본"
+            if(zone=='DE'): country ="독일"
+            if(zone=='FR'): country ="프랑스"
+            # 델타값 비교 알고리즘
+            if(cmp_ev != ev): 
+                pre_ev = cmp_ev
+                self.firebase.write_data(f"{zone}/preev", pre_ev)
+            if(cmp_emission != emission):
+                pre_emission = cmp_emission
+                self.firebase.write_data(f"{zone}/preemission", pre_emission)
+            if(cmp_gfreq != gfreq):
+                pre_gfreq = cmp_gfreq 
+                self.firebase.write_data(f"{zone}/pregfreq", pre_gfreq)
+            self.firebase.write_data(f"{zone}/cmpev", ev)
+            self.firebase.write_data(f"{zone}/cmpemission", emission)
+            self.firebase.write_data(f"{zone}/cmpgfreq", gfreq)
+
+
+            # 가져온 데이터를 레이아웃 데이터에 복사
+            # 전력 사용량 그래프
+            self.layout_manager.ev_use_fig = go.Figure(data = [go.Indicator(
+                                                       mode="gauge+number+delta",
+                                                       value=ev,
+                                                       delta={'reference': pre_ev},
+                                                       title={'text': "EV Usage(W)"},
+                                                       domain={'x': [0,1], 'y': [0,1]},
+                                                       gauge={'axis': {'range': [0,1000]}}
+            )])
+            #self.layout_manager.ev_use_fig = go.Figure(data=[go.Scatter(x=[1, 2, 3, 4], y=ev)]) # 다른그래프모양
+            self.layout_manager.ev_use_fig.update_layout(margin=dict(l=40, r=40, t=40, b=0), title=f'{country} 서버: 전력 사용량')
+
+            #탄소 배출량 그래프
+            self.layout_manager.carbon_emission_fig = go.Figure(data=[go.Indicator(
+                mode="gauge+number+delta",
+                value=emission,
+                gauge={
+                    'shape':'bullet',
+                    'axis':{'visible': True, 'range':[0,500]},
+                },
+                delta={'reference': pre_emission},
+                domain = {'x': [0.1, 1], 'y': [0.2, 0.9]},
+            )])
+            # 타이틀을 그래프 위로 올리기
+            self.layout_manager.carbon_emission_fig.update_layout(annotations=[dict(
+                text="Emission(g)",
+                showarrow=False,
+                xref="paper",
+                yref="paper",
+                x=0.5,
+                y=0.98,
+                align ="center",
+                font=dict(
+                        size=20, # 원하는 크기로 조절
+                    ),
+                )
+            ])
+            self.layout_manager.carbon_emission_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'{country} 서버: 탄소 배출량')
+
+            # GPU 주파수 그래프
+            self.layout_manager.gpu_freq_fig = go.Figure(data=[go.Indicator(
+                mode="gauge+number+delta",
+                value=gfreq,
+                delta={'reference': pre_gfreq},
+                title={'text': "Frequency(Hz)"},
+                domain={'x': [0, 1], 'y': [0, 1]},
+                gauge={'axis': {'range': [0, 2000]}}
+            )])
+            self.layout_manager.gpu_freq_fig.update_layout(margin=dict(l=40, r=40, t=40, b=0), title=f'{country} 서버: GPU 주파수')
+
+            # 그래프 반환
+            return self.layout_manager.ev_use_fig, self.layout_manager.carbon_emission_fig, self.layout_manager.gpu_freq_fig
+
+    #일렉트리시티API 콜백
+    def electricity_callback(self):
+        @self.app.callback(
+            Output('carbon_density', 'figure'),
+            Output('energy_output', 'figure'),
+            Input('elec_interval-component', 'n_intervals'),  # 주기적으로 콜백을 트리거합니다
+        )
+        def update_electricity_callback(n_intervals):
+            print('elec 콜백')
+            # 데이터 랜덤 삽입
+            random_country = random.choice(["KR", "JP-TK", "DE", "FR"])
+            self.firebase.write_data("main/zone",random_country)
+            # 데이터 읽어오기
+            zone = self.firebase.read_data("main/zone")
+            carbon_data = self.em.carbon_intensity("carbon-intensity",zone = zone, format='latest')
+            power_data_all = self.em.carbon_intensity("power-breakdown",zone = zone, format='latest')
+            power_data = power_data_all.get("powerProductionBreakdown")
+            if(zone=='KR'): country ="대한민국"
+            if(zone=='JP-TK'): country ="일본"
+            if(zone=='DE'): country ="독일"
+            if(zone=='FR'): country ="프랑스"
+            nuclear = power_data.get("nuclear") # 원자력
+            geothermal = power_data.get("geothermal") # 지열
+            biomass = power_data.get("biomass") # 바이오매스
+            coal = power_data.get("coal") # 석탄
+            wind = power_data.get("wind") # 바람
+            solar = power_data.get("solar") # 태양
+            hydro = power_data.get("hydro") # 수력
+            hydro_discharge = power_data.get("hydro discharge") # 양수
+            battery_discharge = power_data.get("battery discharge") # 배터리 용량
+            gas = power_data.get("gas") # 가스
+            oil = power_data.get("oil") # 오일
+            unknown = power_data.get("unknown") # 알수없음
+            # 시간읽어와서 형식바꾸기 ( +9시 )
+            carbon_datetime = datetime.strptime(carbon_data.get("datetime"), "%Y-%m-%dT%H:%M:%S.%fZ") + timedelta(hours=9)
+            power_datetime = datetime.strptime(power_data_all.get("datetime"), "%Y-%m-%dT%H:%M:%S.%fZ") + timedelta(hours=9)
+            carbon_date = carbon_datetime.strftime("%Y-%m-%d")
+            carbon_time = carbon_datetime.strftime("%H시")
+            power_date = power_datetime.strftime("%Y-%m-%d")
+            power_time = power_datetime.strftime("%H시")
+            # 델타값 비교 알고리즘
+            cmp_intensity = self.firebase.read_data(f"{zone}/cmpintensity")
+            pre_intensity = self.firebase.read_data(f"{zone}/preintensity")
+            if(cmp_intensity != carbon_data.get('carbonIntensity')): 
+                pre_intensity = carbon_data.get('carbonIntensity')
+                self.firebase.write_data(f"{zone}/preintensity", pre_intensity)
+                self.firebase.write_data(f"{zone}/cmpintensity", carbon_data.get('carbonIntensity'))
+
+            #탄소밀집도 그래프
+            self.layout_manager.carbon_density_fig = go.Figure(data=[go.Indicator(mode= "gauge+number+delta",
+                                                               title={'text': 'Carbon-Intensity'},
+                                                               value=carbon_data.get('carbonIntensity'),
+                                                               domain ={'x':[0,1], 'y': [0,1]},
+                                                               gauge={'axis': {'range': [0,1000]}},
+                                                               delta={'reference': pre_intensity},
+                                                               )]) 
+            self.layout_manager.carbon_density_fig.update_layout(margin=dict(l=40, r=40, t=40, b=0), title=f'탄소밀집도: {country} ({carbon_date} {carbon_time})')
+
+            # 에너지 출처 그래프
+            self.layout_manager.energy_output_fig = go.Figure(data=go.Bar(
+                x = [nuclear, geothermal, biomass, coal, wind, solar, hydro, hydro_discharge, battery_discharge, gas, oil, unknown],
+                y = ['원자력', '지열', '바이오매스','석탄','바람','태양','수력','댐','배터리용량','가스','오일','알수없음'],
+                orientation='h'
+            ))
+            self.layout_manager.energy_output_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'에너지 출처: {country} ({power_date} {power_time})')
+
+            return self.layout_manager.carbon_density_fig, self.layout_manager.energy_output_fig
 
     def geo_callback(self):
-        pass
-    
+        @self.app.callback(
+            Output('url', 'children'),
+            Input('map', 'clickData'),  # 주기적으로 콜백을 트리거합니다
+        )
+        
+        def update_url(clickData):
+            pass
+            
