@@ -16,7 +16,7 @@ class LayoutManager:
                                                        domain={'x': [0,1], 'y': [0,1]},
                                                        gauge={'axis': {'range': [0,1000]}}
         )])
-        self.ev_use_fig.update_layout(margin=dict(l=40, r=40, t=40, b=0), title=f'서버 #: 전력 사용량')
+        self.ev_use_fig.update_layout(margin=dict(l=40, r=40, t=40, b=0), title=f'# 서버: 전력 사용량')
 
         self.carbon_emission_fig = go.Figure(data=[go.Indicator( # 탄소배출량 그래프
                 mode ="gauge+number",
@@ -38,19 +38,26 @@ class LayoutManager:
                 )
             )
         ])
-        self.carbon_emission_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'서버 #: 탄소 배출량')
+        self.carbon_emission_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'# 서버: 탄소 배출량')
 
         self.gpu_freq_fig = go.Figure(data=[go.Indicator(mode = "gauge+number",
                                                         title = {'text': "Frequency(Hz)"},
                                                         domain = {'x': [0, 1], 'y': [0, 1]},
                                                         gauge={'axis': {'range': [0, 2000]}})]) # GPU 사용량 그래프
-        self.gpu_freq_fig.update_layout(margin=dict(l=40, r=40, t=40, b=0), title=f'서버 #: GPU 주파수')
+        self.gpu_freq_fig.update_layout(margin=dict(l=40, r=40, t=40, b=0), title=f'# 서버: GPU 주파수')
 
-        self.carbon_density_fig = go.Figure(data=[go.Scatter(x=[1, 2, 3], y=[4, 1, 2])]) # 탄소 밀도 그래프
-        self.carbon_density_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'지역 #: 탄소 밀집도')
+        self.carbon_density_fig = go.Figure(data=[go.Indicator(mode= "gauge+number",
+                                                               title={'text': 'Carbon-Intensity'},
+                                                               domain ={'x':[0,1], 'y': [0,1]},
+                                                               gauge={'axis': {'range': [0,1000]}}
+                                                               )]) # 탄소 밀도 그래프
+        self.carbon_density_fig.update_layout(margin=dict(l=40, r=40, t=40, b=0), title=f'탄소 밀집도: 지역#')
 
-        self.energy_output_fig = go.Figure(data=[go.Scatter(x=[1, 2, 3], y=[4, 1, 2])]) # 에너지 출력 그래프
-        self.energy_output_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'지역 #: 에너지 출처')
+        self.energy_output_fig = go.Figure(data=go.Bar(
+                y = ['원자력', '지열', '바이오매스','석탄','바람','태양','수력','양수','배터리용량','가스','오일','알수없음'],
+                orientation='h'
+        ))
+        self.energy_output_fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), title=f'에너지 출처: 지역#')
 
         self.geo = go.Figure(data=go.Scattergeo(
             lon = [126.9780],
@@ -120,6 +127,12 @@ class LayoutManager:
                         self.controls,
                         dbc.Row(
                             self.resources
+                            
+                        ),
+                        dcc.Interval(
+                            id='interval-component',
+                            interval=10000,  # 5초마다 콜백을 트리거하도록 설정
+                            n_intervals=0
                         )
                     ], width=3),
 
@@ -128,24 +141,27 @@ class LayoutManager:
                             dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.carbon_emission_fig, id='emission'))], body=True, ), width=4),
                             dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.ev_use_fig, id='ev'))], body=True, ), width=4),
                             dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.gpu_freq_fig, id='gfreq'))], body=True, ), width=4),
+                            dcc.Interval(
+                                id='interval-component',
+                                interval=10000,  # 5초마다 콜백을 트리거하도록 설정
+                                n_intervals=0
+                            )
                         ]),
                         dbc.Row([
-                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.geo))], body=True))
+                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.geo))], body=True,))
                         ]),
                         dbc.Row([
-                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.carbon_density_fig))], body=True, ), width=6),
-                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.energy_output_fig))], body=True, ), width=6),
+                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.carbon_density_fig, id='carbon_density'))], body=True, ), width=6),
+                            dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.energy_output_fig, id='energy_output'))], body=True, ), width=6),
+                            dcc.Interval(
+                                id='elec_interval-component',
+                                interval=1000*60,  # 1분마다 콜백을 트리거하도록 설정
+                                n_intervals=0
+                            )
                         ]),
-
                     ], width=9),
 
                 ]),
                 self.footer,
-                 # dcc.Interval을 추가하여 10초에 한 번씩 자동으로 콜백을 트리거합니다.
-                dcc.Interval(
-                    id='interval-component',
-                    interval=10000,  # 1초마다 콜백을 트리거하도록 설정
-                    n_intervals=0
-                )
             ],fluid=True, className="dbc dbc-ag-grid",)
 

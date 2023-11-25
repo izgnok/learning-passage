@@ -1,8 +1,8 @@
 import requests
 
-
 class ElectricityMapsManager: 
-    def carbon_intensity(self, zone='KR', data='intensity', format='history'):
+    #탄소집약도
+    def carbon_intensity(self, type, zone='KR', format='latest'):
         '''
         - parameters -
         zone : region code (zone list : https://docs.google.com/document/d/e/2PACX-1vTdYp8E5E3fNogL54ICf_UxfA_rZ_RPO4WKWI4ZANPSX25jCbvHtAxc-VrJt9HymeRHFcSGWXjhVHS0/pub)
@@ -25,7 +25,7 @@ class ElectricityMapsManager:
         '''
 
         # API endpoint URL
-        url = f"https://api-access.electricitymaps.com/2w97h07rvxvuaa1g/carbon-{data}/{format}"
+        url = f"https://api-access.electricitymaps.com/2w97h07rvxvuaa1g/{type}/{format}"
 
         # request parameter
         params = {
@@ -34,7 +34,7 @@ class ElectricityMapsManager:
 
         # Add API key to header
         headers = {
-            'auth-token': 'B2rrbWGR4vCuU5gsZ0I0otzvJFAXqcHR'
+            'auth-token': '6wUzIaKXxiFgD97RtKanMIW7qEPbd1YI'
         }
 
         # GET request
@@ -44,8 +44,7 @@ class ElectricityMapsManager:
         if response.status_code == 200:
         # request output
             data = response.json()
-            print(data)
+            return data
         else:
         # failed request
             print("Error:", response.status_code, response.text)
-    

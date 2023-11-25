@@ -22,6 +22,8 @@ app.layout = layout.create_layout()
 callback = CallbackManager(app, server)
 callback.graph_callback() # 그래프 콜백
 callback.resources_callback() # 컴퓨터자원 콜백
+callback.electricity_callback() # 탄소밀집도,에너지출처 콜백
+callback.geo_callback() # 지도 콜백
 
 
 if __name__ == "__main__":
