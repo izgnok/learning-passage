@@ -77,9 +77,9 @@ class CallbackManager:
         데이터, 그래프 콜백
         """
         @self.app.callback(
-            [Output('ev', 'figure'),
+            Output('ev', 'figure'),
             Output('emission', 'figure'),
-            Output('gfreq', 'figure')],
+            Output('gfreq', 'figure'),
             Input('interval-component', 'n_intervals'),  # 주기적으로 콜백을 트리거합니다
             allow_duplicate=True
         )
@@ -181,8 +181,8 @@ class CallbackManager:
     #일렉트리시티API 콜백
     def electricity_callback(self):
         @self.app.callback(
-            [Output('carbon_density', 'figure'),
-            Output('energy_output', 'figure')],
+            Output('carbon_density', 'figure'),
+            Output('energy_output', 'figure'),
             Input('elec_interval-component', 'n_intervals'),  # 주기적으로 콜백을 트리거합니다
         )
         def update_electricity_callback(n_intervals):
@@ -222,8 +222,8 @@ class CallbackManager:
             cmp_intensity = self.firebase.read_data(f"{zone}/cmpintensity")
             pre_intensity = self.firebase.read_data(f"{zone}/preintensity")
             if(cmp_intensity != carbon_data.get('carbonIntensity')): 
-                pre_ev = carbon_data.get('carbonIntensity')
-                self.firebase.write_data(f"{zone}/preev", pre_ev)
+                pre_intensity = carbon_data.get('carbonIntensity')
+                self.firebase.write_data(f"{zone}/preintensity", pre_intensity)
             self.firebase.write_data(f"{zone}/cmpintensity", carbon_data.get('carbonIntensity'))
 
             #탄소밀집도 그래프
@@ -246,5 +246,6 @@ class CallbackManager:
             
             return self.layout_manager.carbon_density_fig, self.layout_manager.energy_output_fig
 
+    #지도 콜백
     def geo_callback(self):
         pass

@@ -131,7 +131,7 @@ class LayoutManager:
                         ),
                         dcc.Interval(
                             id='interval-component',
-                            interval=10000,  # 5초마다 콜백을 트리거하도록 설정
+                            interval=10000,  # 10초마다 콜백을 트리거하도록 설정
                             n_intervals=0
                         )
                     ], width=3),
@@ -143,7 +143,7 @@ class LayoutManager:
                             dbc.Col(dbc.Card([html.Div(dcc.Graph(figure=self.gpu_freq_fig, id='gfreq'))], body=True, ), width=4),
                             dcc.Interval(
                                 id='interval-component',
-                                interval=10000,  # 5초마다 콜백을 트리거하도록 설정
+                                interval=10000,  # 10초마다 콜백을 트리거하도록 설정
                                 n_intervals=0
                             )
                         ]),
